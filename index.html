@@ -44,16 +44,15 @@
             text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7); /* Тень для текста */
         }
         .container {
-            text-align: center;
-            margin-top: 50px;
-            display: flex;
-            justify-content: flex-start; /* Выравнивание кнопок по левому краю */
-            align-items: center;         /* Центрирование по вертикали */
-            margin-left: 20px;           /* Отступ от левого края */
-            position: absolute;          /* Абсолютное позиционирование */
-            top: 20px;                   /* Отступ сверху */
-            left: 20px;   
-        }
+           display: flex;
+           flex-direction: column;      /* Кнопки располагаются вертикально */
+           justify-content: flex-start; /* Выравнивание по левому краю */
+           align-items: flex-start;     /* Кнопки выравниваются по левому краю */
+           margin-left: 20px;           /* Отступ от левого края */
+           position: absolute;          /* Абсолютное позиционирование */
+           top: 20px;                   /* Отступ сверху */
+           left: 20px;                  /* Отступ слева */
+}
         
         button {
             background: linear-gradient(90deg, red, orange, black, green, blue, indigo, violet);
