@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Решение Формулы</title>
+    <title>Решение формулы</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -28,8 +28,14 @@
         button:hover {
             background-color: #45a049;
         }
-        #result {
+        #formula {
             margin-top: 20px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #333;
+        }
+        #result {
+            margin-top: 10px;
             font-size: 24px;
             font-weight: bold;
         }
@@ -49,22 +55,29 @@
         <label for="c">Введите значение c:</label><br>
         <input type="number" id="c" required><br>
 
-        <button type="button" onclick="calculate()">Рассчитать</button>
+        <button type="button" onclick="calculate()">Решить Формулу</button>
     </form>
 
+    
+    <div id="formula">Формула: (a * 5 - b + 9 / 2) - (3 * b - 2 * c) * 2 = </div>
+    
+   
     <div id="result"></div>
 
     <script>
         function calculate() {
-            // Получаем значения из полей ввода
+           
             var a = parseFloat(document.getElementById('a').value);
             var b = parseFloat(document.getElementById('b').value);
             var c = parseFloat(document.getElementById('c').value);
 
-            // Вычисляем результат по формуле: (a*5 - b + 9/2) - (3*b - 2*c)*2
+           
             var result = (a * 5 - b + 9 / 2) - ((3 * b - 2 * c) * 2);
 
-            // Отображаем результат на странице
+           
+            document.getElementById('formula').innerHTML = "Формула: (" + a + " * 5 - " + b + " + 9 / 2) - (3 * " + b + " - 2 * " + c + ") * 2 = " + result;
+
+           
             document.getElementById('result').innerHTML = "Результат: " + result;
         }
     </script>
