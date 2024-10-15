@@ -5,28 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Работа по введению в специальность. Эссе 1</title>
     <style>
-         .back-to-top {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            display: none;
-            background-color: #007BFF;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        .back-to-top:hover {
-            background-color: #0056b3;
-        }
-        .back-to-top {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-}
         a {
     color: #007BFF;
     text-decoration: none;
@@ -68,21 +46,25 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         
-        .back-to-top {
+         .back-to-top {
             position: fixed;
             bottom: 20px;
             right: 20px;
             display: none;
             background-color: #007BFF;
             color: white;
-            padding: 10px 20px;
+            padding: 10px;
             border: none;
-            border-radius: 5px;
+            border-radius: 50%; /* Круглая кнопка */
             cursor: pointer;
-            font-size: 16px;
+            font-size: 20px;
+            width: 50px; /* Ширина кнопки */
+            height: 50px; /* Высота кнопки */
+            text-align: center;
+            line-height: 30px; /* Вертикальное выравнивание символа стрелки */
         }
-        
-         .back-to-top:hover {
+
+        .back-to-top:hover {
             background-color: #0056b3;
         }
         
@@ -194,9 +176,11 @@ XX век ознаменовался значительным прогрессо
 <footer>г. Донецк 2024</footer>
 
     <a href="index.html" class="button-link">Вернуться на главную</a>
-    <button class="back-to-top" id="scrollToTopBtn">Наверх</button>
-    <script>
-         window.onscroll = function() {
+   <button class="back-to-top" id="scrollToTopBtn">↑</button>
+
+<script>
+    // Показываем кнопку "Наверх", когда пользователь прокручивает страницу вниз
+    window.onscroll = function() {
         var scrollToTopBtn = document.getElementById("scrollToTopBtn");
         if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
             scrollToTopBtn.style.display = "block";
@@ -204,7 +188,9 @@ XX век ознаменовался значительным прогрессо
             scrollToTopBtn.style.display = "none";
         }
     };
-        document.getElementById("scrollToTopBtn").onclick = function() {
+
+    // Плавная прокрутка наверх при нажатии на кнопку
+    document.getElementById("scrollToTopBtn").onclick = function() {
         window.scrollTo({
             top: 0,
             behavior: 'smooth'
