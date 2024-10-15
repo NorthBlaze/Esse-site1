@@ -46,8 +46,15 @@
         .container {
             text-align: center;
             margin-top: 50px;
+            display: flex;
+            justify-content: flex-start; /* Выравнивание кнопок по левому краю */
+            align-items: center;         /* Центрирование по вертикали */
+            margin-left: 20px;           /* Отступ от левого края */
+            position: absolute;          /* Абсолютное позиционирование */
+            top: 20px;                   /* Отступ сверху */
+            left: 20px;   
         }
-
+        
         button {
             background: linear-gradient(90deg, red, orange, black, green, blue, indigo, violet);
     background-size: 400% 400%;
