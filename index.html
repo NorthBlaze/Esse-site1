@@ -49,7 +49,8 @@
         }
 
         button {
-            background: linear-gradient(45deg, #4CAF50, #45a049, #3e8e41, #76c7c0);
+            background: linear-gradient(90deg, red, orange, yellow, green, blue, indigo, violet);
+            background-size: 400% 400%;
             color: white;
             padding: 15px 32px;
             text-align: center;
@@ -58,13 +59,13 @@
             border: none;
             cursor: pointer;
             border-radius: 5px;
-            animation: gradient 5s ease infinite;
+            animation: rainbow 5s ease infinite;
         }
 
         button:hover {
             background-position: right center;
         }
-        @keyframes gradient {
+        @keyframes rainbow {
     0% {
         background-position: 0% 50%;
     }
@@ -75,7 +76,6 @@
         background-position: 0% 50%;
     }
 }
-
         footer {
             text-align: center;
             padding: 10px;
