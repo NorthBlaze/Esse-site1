@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор формулы</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding: 50px;
+        }
+        input {
+            padding: 10px;
+            margin: 5px;
+            font-size: 18px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            margin-top: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Калькулятор формулы</h1>
+
+    <form id="formulaForm">
+        <label for="a">Введите значение a:</label><br>
+        <input type="number" id="a" required><br>
+        
+        <label for="b">Введите значение b:</label><br>
+        <input type="number" id="b" required><br>
+        
+        <label for="c">Введите значение c:</label><br>
+        <input type="number" id="c" required><br>
+
+        <button type="button" onclick="calculate()">Рассчитать</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        function calculate() {
+            // Получаем значения из полей ввода
+            var a = parseFloat(document.getElementById('a').value);
+            var b = parseFloat(document.getElementById('b').value);
+            var c = parseFloat(document.getElementById('c').value);
+
+            // Вычисляем результат по формуле: (a*5 - b + 9/2) - (3*b - 2*c)*2
+            var result = (a * 5 - b + 9 / 2) - ((3 * b - 2 * c) * 2);
+
+            // Отображаем результат на странице
+            document.getElementById('result').innerHTML = "Результат: " + result;
+        }
+    </script>
+
+</body>
+</html>
