@@ -22,16 +22,22 @@
             text-align: center;
         }
         .button {
-    display: inline-block;
-    padding: 10px 20px;
-    font-size: 16px;
-    color: white;
-    background-color: #4CAF50;
-    text-align: center;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-}
+        position: fixed; /* Фиксируем кнопку относительно окна браузера */
+        bottom: 10px;    /* Отступ 10 пикселей от нижнего края */
+        left: 10px;      /* Отступ 10 пикселей от левого края */
+        padding: 10px 20px;
+        font-size: 16px;
+        color: white;
+        background-color: #4CAF50;
+        text-align: center;
+        text-decoration: none;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .button:hover {
+        background-color: #45a049; /* Изменение цвета кнопки при наведении */
+    }
 
 .button:hover {
     background-color: #45a049;
