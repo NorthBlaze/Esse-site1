@@ -101,6 +101,27 @@
         .button-link:hover {
             background-color: #45a049; /* Изменение цвета при наведении */
         }
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 50%; /* Круглая кнопка */
+            cursor: pointer;
+            font-size: 20px;
+            width: 50px; /* Ширина кнопки */
+            height: 50px; /* Высота кнопки */
+            text-align: center;
+            line-height: 30px; /* Вертикальное выравнивание символа стрелки */
+        }
+
+        .back-to-top:hover {
+            background-color: #0056b3;
+        }
     </style>
 </head>
 <body>
@@ -135,5 +156,26 @@
     <footer>г. Донецк 2024</footer>
 
     <a href="index.html" class="button-link">Вернуться на главную</a>
+    <button class="back-to-top" id="scrollToTopBtn">↑</button>
+
+<script>
+    // Показываем кнопку "Наверх", когда пользователь прокручивает страницу вниз
+    window.onscroll = function() {
+        var scrollToTopBtn = document.getElementById("scrollToTopBtn");
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            scrollToTopBtn.style.display = "block";
+        } else {
+            scrollToTopBtn.style.display = "none";
+        }
+    };
+
+    // Плавная прокрутка наверх при нажатии на кнопку
+    document.getElementById("scrollToTopBtn").onclick = function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+</script>
 </body>
 </html>
