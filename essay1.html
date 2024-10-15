@@ -44,6 +44,7 @@
     a:active {
     color: #004085;
 }
+        
         body {
             font-family: Times New Roman, sans-serif;
             line-height: 1.0;
@@ -51,12 +52,14 @@
             padding: 0;
             background-color: #E6E6FA;
         }
+        
         header {
             background-color: #E6E6FA;
             color: #fff;
             padding: 10px 0;
             text-align: center;
         }
+        
         section {
             margin: 20px auto;
             max-width: 800px;
@@ -64,6 +67,25 @@
             padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+        
+        .back-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: none;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+         .back-to-top:hover {
+            background-color: #0056b3;
+        }
+        
         h1 {
             color: #333;
         }
@@ -172,6 +194,24 @@ XX век ознаменовался значительным прогрессо
 <footer>г. Донецк 2024</footer>
 
     <a href="index.html" class="button-link">Вернуться на главную</a>
+    <button class="back-to-top" id="scrollToTopBtn">Наверх</button>
+    <script>
+         window.onscroll = function() {
+        var scrollToTopBtn = document.getElementById("scrollToTopBtn");
+        if (document.body.scrollTop > 200 || document.documentElement.scrollTop > 200) {
+            scrollToTopBtn.style.display = "block";
+        } else {
+            scrollToTopBtn.style.display = "none";
+        }
+    };
+        document.getElementById("scrollToTopBtn").onclick = function() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    };
+</script>
+    
 </body>
 </html>
 
