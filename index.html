@@ -36,23 +36,23 @@
         }
      h2 {
             font-size: 48px;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); /* Тень для текста, чтобы он был виден */
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); 
         }
     p {
             font-size: 20px;
-            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7); /* Тень для текста */
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7); 
         }
         .container {
            display: flex;
            flex-direction: column;      
            justify-content: flex-start; 
            align-items: flex-start;     
-           margin-left: 20px;           
-           position: absolute;         
-           top: 20px;                   
-           left: 20px;                  
+           margin-left: 20px;        
+           position: absolute;     
+           top: 20px;             
+           left: 20px;            
 }
-        
+
         button {
             background: linear-gradient(90deg, red, orange, black, green, blue, indigo, violet);
     background-size: 400% 400%;
@@ -82,30 +82,33 @@
         background-position: 0% 50%;
     }
 }
-
-    button {
-        width: 100%;
-        padding: 10px;
-        font-size: 14px;
-        margin: 5px;
+        @media (max-width: 600px) {
+    body {
+        font-size: 14px; 
     }
 
     .container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        flex-direction: column; 
+        align-items: center;    
+    }
+
+    button {
+        width: 100%; 
+        margin: 10px 0; 
+    }
+
+    h1 {
+        font-size: 24px; 
     }
 }
-       footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #333;
-    color: white;
-    text-align: center;
-    padding: 10px;
-}
+        footer {
+            text-align: center;
+            padding: 10px;
+            color: white;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
     </style>
 </head>
 <body>
@@ -123,9 +126,10 @@
         <h1>Рад вас видеть на своём сайте!</h1>
         <p>Сбоку вы можете сделать выбор, что хотите посмотреть вначале.</p>
     </div>
-        
+
 <footer>
     <p>© г. Донецк 2024</p>
 </footer>
+     
 </body>
 </html>
