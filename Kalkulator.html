@@ -9,7 +9,8 @@
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
             text-align: center;
-            padding: 50px;
+            padding: 0;
+            margin: 0;
         }
         input {
             padding: 10px;
@@ -62,8 +63,14 @@
 </head>
 <body>
 
-    <h1>Математический гений</h1>
+    <!-- Фото с текстом поверх -->
+    <div class="hero">
+        <div class="hero-text">
+            Математический гений
+        </div>
+    </div>
 
+    <!-- Форма для ввода данных и расчета -->
     <form id="formulaForm">
         <label for="a">Введите значение a:</label><br>
         <input type="number" id="a" required><br>
@@ -77,25 +84,19 @@
         <button type="button" onclick="calculate()">Решить Формулу</button>
     </form>
 
-    
     <div id="formula">Формула: (a * 5 - b + 9 / 2) - (3 * b - 2 * c) * 2 = </div>
     
-   
     <div id="result"></div>
 
     <script>
         function calculate() {
-           
             var a = parseFloat(document.getElementById('a').value);
             var b = parseFloat(document.getElementById('b').value);
             var c = parseFloat(document.getElementById('c').value);
 
-           
             var result = (a * 5 - b + 9 / 2) - ((3 * b - 2 * c) * 2);
 
-           
             document.getElementById('formula').innerHTML = "Формула: (" + a + " * 5 - " + b + " + 9 / 2) - (3 * " + b + " - 2 * " + c + ") * 2 = " + result;
-
         }
     </script>
 
