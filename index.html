@@ -82,10 +82,25 @@
         background-position: 0% 50%;
     }
 }
-        @media (max-width: 768px) {
-    body {
-        font-size: 14px;
-    }
+            @media (max-width: 768px) {
+            .container {
+                flex-direction: column; /* Меняем кнопки на вертикальный порядок */
+                align-items: center; /* Центрируем кнопки */
+            }
+
+            button {
+                width: 80%; /* Кнопки будут занимать 80% ширины экрана на мобильных устройствах */
+                margin: 5px 0; /* Меньшие отступы между кнопками */
+            }
+
+            h1, p {
+                font-size: 16px; /* Уменьшаем размер шрифта на мобильных устройствах */
+            }
+            
+            body {
+                padding: 10px; /* Отступы по краям экрана */
+            }
+        }
 
     button {
         width: 100%;
