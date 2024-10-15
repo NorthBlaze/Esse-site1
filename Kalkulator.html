@@ -5,12 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Решение формулы</title>
     <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden; /* Убираем возможность прокрутки */
+        }
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
             text-align: center;
-            padding: 0;
-            margin: 0;
+        }
+        .hero {
+            position: relative;
+            width: 100%;
+            height: 100vh; /* Высота на весь экран */
+            background-image: url('https://i.ytimg.com/vi/J5-SIO1bv2I/maxresdefault.jpg'); /* Путь к изображению */
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        .hero-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
         }
         input {
             padding: 10px;
@@ -33,60 +55,42 @@
             margin-top: 20px;
             font-size: 20px;
             font-weight: bold;
-            color: #333;
+            color: white; /* Цвет текста формулы */
         }
         #result {
             margin-top: 10px;
             font-size: 24px;
             font-weight: bold;
-        }
-        .hero {
-            position: relative;
-            width: 100%;
-            height: 100vh;
-            background-image: url('https://i.ytimg.com/vi/J5-SIO1bv2I/maxresdefault.jpg'); 
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-        }
-        .hero-text {
-            position: absolute;
-            top: 50%; 
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 48px;
-            text-align: center;
-            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7);
+            color: white; /* Цвет текста результата */
         }
     </style>
 </head>
 <body>
 
-    <!-- Фото с текстом поверх -->
+    <!-- Фото на весь экран с текстом поверх -->
     <div class="hero">
         <div class="hero-text">
-            Математический гений
+            <h1>Математический гений</h1>
+
+            <!-- Форма для ввода данных и расчета -->
+            <form id="formulaForm">
+                <label for="a">Введите значение a:</label><br>
+                <input type="number" id="a" required><br>
+                
+                <label for="b">Введите значение b:</label><br>
+                <input type="number" id="b" required><br>
+                
+                <label for="c">Введите значение c:</label><br>
+                <input type="number" id="c" required><br>
+
+                <button type="button" onclick="calculate()">Решить Формулу</button>
+            </form>
+
+            <!-- Формула и результат -->
+            <div id="formula">Формула: (a * 5 - b + 9 / 2) - (3 * b - 2 * c) * 2 = </div>
+            <div id="result"></div>
         </div>
     </div>
-
-    <!-- Форма для ввода данных и расчета -->
-    <form id="formulaForm">
-        <label for="a">Введите значение a:</label><br>
-        <input type="number" id="a" required><br>
-        
-        <label for="b">Введите значение b:</label><br>
-        <input type="number" id="b" required><br>
-        
-        <label for="c">Введите значение c:</label><br>
-        <input type="number" id="c" required><br>
-
-        <button type="button" onclick="calculate()">Решить Формулу</button>
-    </form>
-
-    <div id="formula">Формула: (a * 5 - b + 9 / 2) - (3 * b - 2 * c) * 2 = </div>
-    
-    <div id="result"></div>
 
     <script>
         function calculate() {
