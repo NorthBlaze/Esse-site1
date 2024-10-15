@@ -3,45 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Главная страница</title>
+    <title>Страница с фоновым изображением</title>
     <style>
         body {
-            font-family: Times New Roman, sans-serif;
-            background-color: #E6E6FA;
             margin: 0;
-            padding: 20px;
-        }
-        header {
-            text-align: center;
-            padding: 20px;
-            background-color: #E6E6FA;
-            color: #333;
-        }
-        h1 {
-            font-size: 32px;
-        }
-        .container {
-            text-align: center;
-            margin-top: 50px;
-        }
-        button {
-            background-color: #4CAF50;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            height: 100vh;
+            background-image: url('https://img-fotki.yandex.ru/get/15593/125874656.44/0_110d8b_35f7d076_XXXL.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
             color: white;
-            padding: 15px 32px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
             text-align: center;
-            font-size: 16px;
-            margin: 10px;
-            border: none;
-            cursor: pointer;
         }
-        button:hover {
-            background-color: #45a049;
+
+        h1 {
+            font-size: 48px;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.7); /* Тень для текста, чтобы он был виден */
+        }
+
+        p {
+            font-size: 20px;
+            text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.7); /* Тень для текста */
         }
     </style>
 </head>
 <body>
-    
-<img src="https://img-fotki.yandex.ru/get/15593/125874656.44/0_110d8b_35f7d076_XXXL.jpg" width="600">
+
+    <div>
+        <h1>Добро пожаловать!</h1>
+        <p>Это пример текста, который виден поверх фонового изображения.</p>
+    </div>
 
 </body>
 </html>
