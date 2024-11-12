@@ -5,7 +5,7 @@ canvas.height = window.innerHeight;
 
 let isGameOver = false;
 let score = 0;
-let lastShotTime = 0; // Время последнего выстрела
+let lastShotTime = 0;
 let keys = {}; // Объект для отслеживания нажатых клавиш
 
 // Игрок
@@ -53,7 +53,6 @@ function spawnZombie() {
             case 3: x = Math.random() * canvas.width; y = canvas.height; break; // снизу
         }
         zombies.push({ x, y, width: 30, height: 30, speed: 1.5 });
-        console.log("Spawned zombie at: ", x, y); // Лог спавна зомби
     }
 }
 
@@ -103,7 +102,6 @@ function shootBullet() {
             dx: Math.cos(angle) * 10,
             dy: Math.sin(angle) * 10
         });
-        console.log("Bullet fired"); // Лог при стрельбе
     }
 }
 
@@ -217,15 +215,15 @@ function resetGame() {
 }
 
 // Управление WASD
-document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()]
-    keys[e.key.toLowerCase()] = false; });
+document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true
+});
+document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
 // Управление стрельбой
+let mouseX = 0, mouseY = 0;
 canvas.addEventListener('mousedown', () => { isShooting = true; });
 canvas.addEventListener('mouseup', () => { isShooting = false; });
 
-let mouseX = 0, mouseY = 0;
 canvas.addEventListener('mousemove', (e) => {
     mouseX = e.clientX;
     mouseY = e.clientY;
@@ -238,4 +236,5 @@ setInterval(spawnBonus, 5000);
 // Спавн зомби каждые 2 секунды
 setInterval(spawnZombie, 2000);
 
-gameLoop(); // Начало игрового цикла
+// Начало игрового цикла
+gameLoop();
