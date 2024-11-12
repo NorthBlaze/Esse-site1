@@ -9,7 +9,7 @@ let player = {
     width: 40,
     height: 40,
     color: 'cyan',
-    speed: 5,
+    speed: 7, // Увеличенная скорость
     bullets: [],
 };
 
@@ -19,23 +19,26 @@ let score = 0;
 let level = 1;
 let isGameOver = false;
 
+// Загрузка изображений для игрока и врагов
+const playerImage = new Image();
+playerImage.src = 'player.png'; // Замените на URL или имя вашего изображения для игрока
+
+const enemyImage = new Image();
+enemyImage.src = 'enemy.png'; // Замените на URL или имя вашего изображения для врагов
+
 function drawPlayer() {
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 }
 
 function drawEnemies() {
     enemies.forEach((enemy, index) => {
-        ctx.fillStyle = 'red';
-        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+        ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
         enemy.y += enemySpeed;
         
-        // Remove enemy if off-screen
         if (enemy.y > canvas.height) {
             enemies.splice(index, 1);
         }
-        
-        // Check for collision with player
+
         if (
             enemy.x < player.x + player.width &&
             enemy.x + enemy.width > player.x &&
@@ -43,6 +46,7 @@ function drawEnemies() {
             enemy.y + enemy.height > player.y
         ) {
             isGameOver = true;
+            showRestartButton();
         }
     });
 }
@@ -53,12 +57,10 @@ function drawBullets() {
         ctx.fillRect(bullet.x, bullet.y, bullet.width, bullet.height);
         bullet.y -= bullet.speed;
 
-        // Remove bullet if off-screen
         if (bullet.y < 0) {
             player.bullets.splice(index, 1);
         }
 
-        // Check for collision with enemies
         enemies.forEach((enemy, enemyIndex) => {
             if (
                 bullet.x < enemy.x + enemy.width &&
@@ -70,7 +72,6 @@ function drawBullets() {
                 enemies.splice(enemyIndex, 1);
                 score += 10;
 
-                // Increase difficulty after certain score
                 if (score % 50 === 0) {
                     level++;
                     enemySpeed += 0.5;
@@ -106,7 +107,34 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-// Controls
+function showRestartButton() {
+    const restartButton = document.createElement('button');
+    restartButton.textContent = 'Restart';
+    restartButton.style.position = 'absolute';
+    restartButton.style.top = '50%';
+    restartButton.style.left = '50%';
+    restartButton.style.transform = 'translate(-50%, -50%)';
+    restartButton.style.padding = '10px 20px';
+    restartButton.style.fontSize = '20px';
+    document.body.appendChild(restartButton);
+
+    restartButton.addEventListener('click', () => {
+        resetGame();
+        restartButton.remove();
+    });
+}
+
+function resetGame() {
+    isGameOver = false;
+    score = 0;
+    level = 1;
+    enemySpeed = 2;
+    player.bullets = [];
+    enemies = [];
+    gameLoop();
+}
+
+// Управление
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
     if (e.key === 'ArrowRight' && player.x + player.width < canvas.width) player.x += player.speed;
@@ -121,8 +149,8 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Spawn enemies every second
+// Создавать врагов каждую секунду
 setInterval(spawnEnemy, 1000);
 
-// Start game loop
+// Запустить игровой цикл
 gameLoop();
