@@ -8,6 +8,7 @@ let score = 0;
 let bossDefeated = false;
 let keys = {}; // Объект для отслеживания нажатых клавиш
 let isShooting = false;
+let lastShotTime = 0; // Время последнего выстрела
 
 // Параметры игрока
 const player = {
@@ -41,6 +42,7 @@ const player = {
 
 // Враги (зомби) и босс
 const zombies = [];
+const maxZombies = 50; // Ограничение на количество зомби
 const boss = { x: 0, y: 0, width: 80, height: 80, health: 50, color: 'darkred', active: false };
 
 // Параметры бонусов
@@ -48,15 +50,17 @@ const bonuses = [];
 
 // Функция для создания зомби
 function spawnZombie() {
-    const side = Math.floor(Math.random() * 4);
-    let x, y;
-    switch (side) {
-        case 0: x = 0; y = Math.random() * canvas.height; break; // слева
-        case 1: x = canvas.width; y = Math.random() * canvas.height; break; // справа
-        case 2: x = Math.random() * canvas.width; y = 0; break; // сверху
-        case 3: x = Math.random() * canvas.width; y = canvas.height; break; // снизу
+    if (zombies.length < maxZombies) { // Проверка, если количество зомби меньше максимума
+        const side = Math.floor(Math.random() * 4);
+        let x, y;
+        switch (side) {
+            case 0: x = 0; y = Math.random() * canvas.height; break; // слева
+            case 1: x = canvas.width; y = Math.random() * canvas.height; break; // справа
+            case 2: x = Math.random() * canvas.width; y = 0; break; // сверху
+            case 3: x = Math.random() * canvas.width; y = canvas.height; break; // снизу
+        }
+        zombies.push({ x, y, width: 30, height: 30, speed: 1.5 });
     }
-    zombies.push({ x, y, width: 30, height: 30, speed: 1.5 });
 }
 
 // Функция для рисования зомби и босса
@@ -110,15 +114,19 @@ function drawZombies() {
 
 // Выстрелы игрока
 function shootBullet() {
-    const angle = Math.atan2(mouseY - (player.y + player.height / 2), mouseX - (player.x + player.width / 2));
-    player.bullets.push({
-        x: player.x + player.width / 2,
-        y: player.y + player.height / 2,
-        width: 10,
-        height: 5,
-        dx: Math.cos(angle) * 10,
-        dy: Math.sin(angle) * 10
-    });
+    const currentTime = Date.now();
+    if (currentTime - lastShotTime > 500) { // Интервал между выстрелами - 0.5 секунды
+        lastShotTime = currentTime; // Обновляем время последнего выстрела
+        const angle = Math.atan2(mouseY - (player.y + player.height / 2), mouseX - (player.x + player.width / 2));
+        player.bullets.push({
+            x: player.x + player.width / 2,
+            y: player.y + player.height / 2,
+            width: 10,
+            height: 5,
+            dx: Math.cos(angle) * 10,
+            dy: Math.sin(angle) * 10
+        });
+    }
 }
 
 function drawBullets() {
@@ -140,6 +148,20 @@ function drawBullets() {
                 score += 10;
             }
         });
+
+        // Проверка попадания пули в босса
+        if (boss.active && bullet.x < boss.x + boss.width &&
+            bullet.x + bullet.width > boss.x &&
+            bullet.y < boss.y + boss.height &&
+            bullet.y + bullet.height > boss.y) {
+            player.bullets.splice(index, 1);
+            boss.health -= 1;
+
+            if (boss.health <= 0) {
+                boss.active = false;
+                score += 100;
+            }
+        }
 
         if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
             player.bullets.splice(index, 1);
@@ -175,16 +197,26 @@ function drawBonuses() {
     });
 }
 
+// Проверка здоровья игрока
+function checkGameOver() {
+    if (player.health <= 0) {
+        isGameOver = true;
+        document.getElementById('restartButton').style.display = 'block';
+    }
+}
+
 // Игровой цикл
 function gameLoop() {
     if (isGameOver) return;
 
+    ctx.clearRect(0, 0,
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
     player.draw();
     drawZombies();
     drawBullets();
     drawBonuses();
+    checkGameOver(); // Проверка, если здоровье игрока меньше или равно 0
 
     ctx.fillStyle = 'white';
     ctx.fillText(`Score: ${score} | Health: ${player.health}`, 10, 30);
