@@ -1,5 +1,5 @@
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
@@ -7,6 +7,9 @@ let isGameOver = false;
 let score = 0;
 let lastShotTime = 0;
 let keys = {}; // Объект для отслеживания нажатых клавиш
+let mouseX = 0, mouseY = 0;
+let zombies = [];
+let bonuses = [];
 
 // Игрок
 const player = {
@@ -27,7 +30,7 @@ const player = {
     move() {
         const dx = (keys['d'] ? 1 : 0) + (keys['a'] ? -1 : 0);
         const dy = (keys['s'] ? 1 : 0) + (keys['w'] ? -1 : 0);
-        
+
         this.x += dx * this.speed;
         this.y += dy * this.speed;
 
@@ -38,10 +41,7 @@ const player = {
 };
 
 // Зомби
-const zombies = [];
-const maxZombies = 50; // Ограничение на количество зомби
-
-// Функция спавна зомби
+const maxZombies = 50;
 function spawnZombie() {
     if (zombies.length < maxZombies) {
         const side = Math.floor(Math.random() * 4);
@@ -58,9 +58,6 @@ function spawnZombie() {
 
 // Функция отрисовки зомби
 function drawZombies() {
-    if (zombies.length === 0) {
-        console.log("No zombies to draw");
-    }
     zombies.forEach((zombie, index) => {
         ctx.fillStyle = "red";
         ctx.beginPath();
@@ -205,8 +202,7 @@ function resetGame() {
     isGameOver = false;
     score = 0;
     player.health = 100;
-    player.speed = 5;
-    boss.active = false;
+        player.speed = 5;
     zombies.length = 0;
     player.bullets.length = 0;
     bonuses.length = 0;
@@ -215,12 +211,11 @@ function resetGame() {
 }
 
 // Управление WASD
-document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true
-});
+document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
 document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
 // Управление стрельбой
-let mouseX = 0, mouseY = 0;
+let isShooting = false;
 canvas.addEventListener('mousedown', () => { isShooting = true; });
 canvas.addEventListener('mouseup', () => { isShooting = false; });
 
@@ -236,5 +231,6 @@ setInterval(spawnBonus, 5000);
 // Спавн зомби каждые 2 секунды
 setInterval(spawnZombie, 2000);
 
-// Начало игрового цикла
+// Игровой цикл
 gameLoop();
+
