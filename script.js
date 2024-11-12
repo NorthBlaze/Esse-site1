@@ -5,12 +5,10 @@ canvas.height = window.innerHeight;
 
 let isGameOver = false;
 let score = 0;
-let bossDefeated = false;
-let keys = {}; // Объект для отслеживания нажатых клавиш
-let isShooting = false;
 let lastShotTime = 0; // Время последнего выстрела
+let keys = {}; // Объект для отслеживания нажатых клавиш
 
-// Параметры игрока
+// Игрок
 const player = {
     x: canvas.width / 2,
     y: canvas.height / 2,
@@ -21,7 +19,6 @@ const player = {
     health: 100,
     bullets: [],
     draw() {
-        // Модели игрока - рисуем человека с оружием
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height); // тело
         ctx.fillStyle = "black"; // оружие
@@ -40,17 +37,16 @@ const player = {
     }
 };
 
-// Враги (зомби) и босс
+// Зомби
 const zombies = [];
 const maxZombies = 50; // Ограничение на количество зомби
+
+// Босс
 const boss = { x: 0, y: 0, width: 80, height: 80, health: 50, color: 'darkred', active: false };
 
-// Параметры бонусов
-const bonuses = [];
-
-// Функция для создания зомби
+// Функция спавна зомби
 function spawnZombie() {
-    if (zombies.length < maxZombies) { // Проверка, если количество зомби меньше максимума
+    if (zombies.length < maxZombies) {
         const side = Math.floor(Math.random() * 4);
         let x, y;
         switch (side) {
@@ -63,7 +59,7 @@ function spawnZombie() {
     }
 }
 
-// Функция для рисования зомби и босса
+// Функция отрисовки зомби
 function drawZombies() {
     zombies.forEach((zombie, index) => {
         ctx.fillStyle = "red";
@@ -79,6 +75,7 @@ function drawZombies() {
         zombie.x += (dx / distance) * zombie.speed;
         zombie.y += (dy / distance) * zombie.speed;
 
+        // Проверка на столкновение с игроком
         if (
             zombie.x < player.x + player.width &&
             zombie.x + zombie.width > player.x &&
@@ -90,6 +87,7 @@ function drawZombies() {
         }
     });
 
+    // Отрисовка босса, если он активен
     if (boss.active) {
         ctx.fillStyle = boss.color;
         ctx.fillRect(boss.x, boss.y, boss.width, boss.height); // босс
@@ -101,6 +99,7 @@ function drawZombies() {
         boss.x += (dx / distance) * 1; // Босс медленнее, но сильнее
         boss.y += (dy / distance) * 1;
 
+        // Проверка на столкновение с игроком
         if (
             boss.x < player.x + player.width &&
             boss.x + boss.width > player.x &&
@@ -112,7 +111,7 @@ function drawZombies() {
     }
 }
 
-// Выстрелы игрока
+// Стрельба
 function shootBullet() {
     const currentTime = Date.now();
     if (currentTime - lastShotTime > 500) { // Интервал между выстрелами - 0.5 секунды
@@ -129,6 +128,7 @@ function shootBullet() {
     }
 }
 
+// Отрисовка пуль
 function drawBullets() {
     player.bullets.forEach((bullet, index) => {
         ctx.fillStyle = 'yellow';
@@ -136,6 +136,7 @@ function drawBullets() {
         bullet.x += bullet.dx;
         bullet.y += bullet.dy;
 
+        // Проверка попадания пули в зомби
         zombies.forEach((zombie, zombieIndex) => {
             if (
                 bullet.x < zombie.x + zombie.width &&
@@ -163,6 +164,7 @@ function drawBullets() {
             }
         }
 
+        // Удаляем пулю, если она выходит за пределы экрана
         if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
             player.bullets.splice(index, 1);
         }
@@ -176,11 +178,13 @@ function spawnBonus() {
     bonuses.push({ x, y, width: 20, height: 20, type: Math.random() < 0.5 ? 'speed' : 'health' });
 }
 
+// Отрисовка бонусов
 function drawBonuses() {
     bonuses.forEach((bonus, index) => {
         ctx.fillStyle = bonus.type === 'speed' ? 'green' : 'orange';
         ctx.fillRect(bonus.x, bonus.y, bonus.width, bonus.height);
 
+        // Проверка на столкновение с игроком
         if (
             bonus.x < player.x + player.width &&
             bonus.x + bonus.width > player.x &&
@@ -197,11 +201,11 @@ function drawBonuses() {
     });
 }
 
-// Проверка здоровья игрока
+// Проверка, если здоровье игрока меньше или равно 0
 function checkGameOver() {
     if (player.health <= 0) {
         isGameOver = true;
-        document.getElementById('restartButton').style.display = 'block';
+        document.getElementById('restartButton').style.display = 'block'; // Показываем кнопку рестарта
     }
 }
 
@@ -209,28 +213,32 @@ function checkGameOver() {
 function gameLoop() {
     if (isGameOver) return;
 
-    ctx.clearRect(0, 0,
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
-    player.draw();
+        player.draw();
     drawZombies();
     drawBullets();
     drawBonuses();
     checkGameOver(); // Проверка, если здоровье игрока меньше или равно 0
 
     ctx.fillStyle = 'white';
-    ctx.fillText(`Score: ${score} | Health: ${player.health}`, 10, 30);
+    ctx.fillText(`Score: ${score} | Health: ${player.health}`, 10, 30); // Отображение счета и здоровья
 
+    // Спавн множества зомби после 300 очков
     if (score >= 300) {
-        for (let i = 0; i < 10; i++) { spawnZombie(); } // Спавн множества зомби после 300 очков
+        for (let i = 0; i < 10; i++) { 
+            spawnZombie(); 
+        }
     }
 
+    // Босс появляется после 100 очков
     if (score >= 100 && !boss.active) {
         boss.active = true;
         boss.x = Math.random() * canvas.width;
         boss.y = Math.random() * canvas.height;
     }
 
+    // Продолжаем игровой цикл
     requestAnimationFrame(gameLoop);
 }
 
@@ -269,4 +277,5 @@ setInterval(spawnBonus, 5000);
 // Спавн зомби каждые 2 секунды
 setInterval(spawnZombie, 2000);
 
-gameLoop();
+gameLoop(); // Начало игрового цикла
+
