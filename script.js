@@ -22,7 +22,7 @@ const player = {
     speed: 5,
     draw() {
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height); // тело
+        ctx.fillRect(this.x, this.y, this.width, this.height); // тело игрока
         ctx.fillStyle = "black"; // оружие
         ctx.fillRect(this.x + this.width / 3, this.y - 10, 10, 20); // оружие в руках
     },
