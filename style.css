@@ -3,7 +3,7 @@ body {
     flex-direction: column;
     align-items: center;
     background-color: #111;
-    background-image: url('background-image.jpg'); /* Замените на фактическое название фонового изображения */
+    background-image: url('background-image.jpg'); /* Замените на ссылку на фоновое изображение */
     background-size: cover;
     background-repeat: no-repeat;
     color: #fff;
