@@ -19,8 +19,11 @@ const player = {
     speed: 5,
     bullets: [],
     draw() {
+        // Модель игрока - рисуем как человека с оружием
         ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, this.width, this.height);
+        ctx.fillRect(this.x, this.y, this.width, this.height); // тело
+        ctx.fillStyle = "black"; // оружие
+        ctx.fillRect(this.x + this.width / 3, this.y - 10, 10, 20); // оружие в руках
     },
     move() {
         const dx = (keys['d'] ? 1 : 0) + (keys['a'] ? -1 : 0);
@@ -57,8 +60,9 @@ function drawZombies() {
     zombies.forEach((zombie, index) => {
         ctx.fillStyle = "red";
         ctx.beginPath();
-        ctx.arc(zombie.x, zombie.y, 15, 0, Math.PI * 2);
+        ctx.arc(zombie.x, zombie.y, 15, 0, Math.PI * 2); // голова зомби
         ctx.fill();
+        ctx.fillRect(zombie.x - 10, zombie.y + 15, 20, 25); // тело
 
         // Движение зомби к игроку
         let dx = player.x - zombie.x;
@@ -80,7 +84,7 @@ function drawZombies() {
 
     if (boss.active) {
         ctx.fillStyle = boss.color;
-        ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
+        ctx.fillRect(boss.x, boss.y, boss.width, boss.height); // босс
 
         // Движение босса к игроку
         let dx = player.x - boss.x;
