@@ -6,6 +6,8 @@ canvas.height = window.innerHeight;
 let isGameOver = false;
 let score = 0;
 let bossDefeated = false;
+let keys = {}; // Объект для отслеживания нажатых клавиш
+let isShooting = false;
 
 // Параметры игрока
 const player = {
@@ -20,9 +22,14 @@ const player = {
         ctx.fillStyle = this.color;
         ctx.fillRect(this.x, this.y, this.width, this.height);
     },
-    move(dx, dy) {
-        this.x += dx;
-        this.y += dy;
+    move() {
+        const dx = (keys['d'] ? 1 : 0) + (keys['a'] ? -1 : 0);
+        const dy = (keys['s'] ? 1 : 0) + (keys['w'] ? -1 : 0);
+        
+        this.x += dx * this.speed;
+        this.y += dy * this.speed;
+
+        // Ограничение движения по краям экрана
         this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
         this.y = Math.max(0, Math.min(canvas.height - this.height, this.y));
     }
@@ -34,8 +41,14 @@ const boss = { x: 0, y: 0, width: 80, height: 80, health: 50, color: 'darkred', 
 
 // Функция для создания зомби
 function spawnZombie() {
-    const x = Math.random() * canvas.width;
-    const y = Math.random() * canvas.height;
+    const side = Math.floor(Math.random() * 4);
+    let x, y;
+    switch (side) {
+        case 0: x = 0; y = Math.random() * canvas.height; break; // слева
+        case 1: x = canvas.width; y = Math.random() * canvas.height; break; // справа
+        case 2: x = Math.random() * canvas.width; y = 0; break; // сверху
+        case 3: x = Math.random() * canvas.width; y = canvas.height; break; // снизу
+    }
     zombies.push({ x, y, width: 30, height: 30, speed: 1.5 });
 }
 
@@ -43,7 +56,9 @@ function spawnZombie() {
 function drawZombies() {
     zombies.forEach((zombie, index) => {
         ctx.fillStyle = "red";
-        ctx.fillRect(zombie.x, zombie.y, zombie.width, zombie.height);
+        ctx.beginPath();
+        ctx.arc(zombie.x, zombie.y, 15, 0, Math.PI * 2);
+        ctx.fill();
 
         // Движение зомби к игроку
         let dx = player.x - zombie.x;
@@ -87,6 +102,18 @@ function drawZombies() {
 }
 
 // Выстрелы игрока
+function shootBullet() {
+    const angle = Math.atan2(mouseY - (player.y + player.height / 2), mouseX - (player.x + player.width / 2));
+    player.bullets.push({
+        x: player.x + player.width / 2,
+        y: player.y + player.height / 2,
+        width: 5,
+        height: 5,
+        dx: Math.cos(angle) * 7,
+        dy: Math.sin(angle) * 7
+    });
+}
+
 function drawBullets() {
     player.bullets.forEach((bullet, index) => {
         ctx.fillStyle = 'yellow';
@@ -138,6 +165,7 @@ function gameLoop() {
     if (isGameOver) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    player.move();
     player.draw();
     drawZombies();
     drawBullets();
@@ -161,24 +189,19 @@ function resetGame() {
     gameLoop();
 }
 
-// Управление игроком
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowUp') player.move(0, -player.speed);
-    if (e.key === 'ArrowDown') player.move(0, player.speed);
-    if (e.key === 'ArrowLeft') player.move(-player.speed, 0);
-    if (e.key === 'ArrowRight') player.move(player.speed, 0);
-});
+// Управление WASD
+document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
+document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
 
-canvas.addEventListener('click', (e) => {
-    const angle = Math.atan2(e.clientY - player.y, e.clientX - player.x);
-    player.bullets.push({
-        x: player.x + player.width / 2,
-        y: player.y + player.height / 2,
-        width: 5,
-        height: 5,
-        dx: Math.cos(angle) * 7,
-        dy: Math.sin(angle) * 7
-    });
+// Управление стрельбой
+canvas.addEventListener('mousedown', () => { isShooting = true; });
+canvas.addEventListener('mouseup', () => { isShooting = false; });
+
+let mouseX = 0, mouseY = 0;
+canvas.addEventListener('mousemove', (e) => {
+    mouseX = e.clientX;
+    mouseY = e.clientY;
+    if (isShooting) shootBullet();
 });
 
 // Спавн зомби каждые 2 секунды
