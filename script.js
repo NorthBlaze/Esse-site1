@@ -41,9 +41,6 @@ const player = {
 const zombies = [];
 const maxZombies = 50; // Ограничение на количество зомби
 
-// Босс
-const boss = { x: 0, y: 0, width: 80, height: 80, health: 50, color: 'darkred', active: false };
-
 // Функция спавна зомби
 function spawnZombie() {
     if (zombies.length < maxZombies) {
@@ -56,11 +53,15 @@ function spawnZombie() {
             case 3: x = Math.random() * canvas.width; y = canvas.height; break; // снизу
         }
         zombies.push({ x, y, width: 30, height: 30, speed: 1.5 });
+        console.log("Spawned zombie at: ", x, y); // Лог спавна зомби
     }
 }
 
 // Функция отрисовки зомби
 function drawZombies() {
+    if (zombies.length === 0) {
+        console.log("No zombies to draw");
+    }
     zombies.forEach((zombie, index) => {
         ctx.fillStyle = "red";
         ctx.beginPath();
@@ -86,29 +87,6 @@ function drawZombies() {
             zombies.splice(index, 1); // Уничтожение зомби
         }
     });
-
-    // Отрисовка босса, если он активен
-    if (boss.active) {
-        ctx.fillStyle = boss.color;
-        ctx.fillRect(boss.x, boss.y, boss.width, boss.height); // босс
-
-        // Движение босса к игроку
-        let dx = player.x - boss.x;
-        let dy = player.y - boss.y;
-        let distance = Math.sqrt(dx * dx + dy * dy);
-        boss.x += (dx / distance) * 1; // Босс медленнее, но сильнее
-        boss.y += (dy / distance) * 1;
-
-        // Проверка на столкновение с игроком
-        if (
-            boss.x < player.x + player.width &&
-            boss.x + boss.width > player.x &&
-            boss.y < player.y + player.height &&
-            boss.y + boss.height > player.y
-        ) {
-            player.health -= 5;
-        }
-    }
 }
 
 // Стрельба
@@ -125,6 +103,7 @@ function shootBullet() {
             dx: Math.cos(angle) * 10,
             dy: Math.sin(angle) * 10
         });
+        console.log("Bullet fired"); // Лог при стрельбе
     }
 }
 
@@ -149,25 +128,6 @@ function drawBullets() {
                 score += 10;
             }
         });
-
-        // Проверка попадания пули в босса
-        if (boss.active && bullet.x < boss.x + boss.width &&
-            bullet.x + bullet.width > boss.x &&
-            bullet.y < boss.y + boss.height &&
-            bullet.y + bullet.height > boss.y) {
-            player.bullets.splice(index, 1);
-            boss.health -= 1;
-
-            if (boss.health <= 0) {
-                boss.active = false;
-                score += 100;
-            }
-        }
-
-        // Удаляем пулю, если она выходит за пределы экрана
-        if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
-            player.bullets.splice(index, 1);
-        }
     });
 }
 
@@ -215,10 +175,10 @@ function gameLoop() {
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     player.move();
-        player.draw();
-    drawZombies();
-    drawBullets();
-    drawBonuses();
+    player.draw();
+    drawZombies(); // Отрисовываем зомби
+    drawBullets(); // Отрисовываем пули
+    drawBonuses(); // Отрисовываем бонусы
     checkGameOver(); // Проверка, если здоровье игрока меньше или равно 0
 
     ctx.fillStyle = 'white';
@@ -258,7 +218,8 @@ function resetGame() {
 
 // Управление WASD
 document.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; });
-document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+document.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()]
+    keys[e.key.toLowerCase()] = false; });
 
 // Управление стрельбой
 canvas.addEventListener('mousedown', () => { isShooting = true; });
@@ -278,4 +239,3 @@ setInterval(spawnBonus, 5000);
 setInterval(spawnZombie, 2000);
 
 gameLoop(); // Начало игрового цикла
-
