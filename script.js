@@ -21,10 +21,10 @@ let isGameOver = false;
 
 // Загрузка изображений для игрока и врагов
 const playerImage = new Image();
-playerImage.src = 'player.png'; // Замените на URL или имя вашего изображения для игрока
+playerImage.src = 'player.png'; // Замените на фактическое имя файла для изображения игрока
 
 const enemyImage = new Image();
-enemyImage.src = 'enemy.png'; // Замените на URL или имя вашего изображения для врагов
+enemyImage.src = 'enemy.png'; // Замените на фактическое имя файла для изображения врага
 
 function drawPlayer() {
     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
