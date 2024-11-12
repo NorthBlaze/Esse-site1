@@ -126,4 +126,3 @@ setInterval(spawnEnemy, 1000);
 
 // Start game loop
 gameLoop();
-
