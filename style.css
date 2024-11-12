@@ -3,6 +3,9 @@ body {
     flex-direction: column;
     align-items: center;
     background-color: #111;
+    background-image: url('background-image.jpg'); /* Замените на URL или имя вашего фонового изображения */
+    background-size: cover;
+    background-repeat: no-repeat;
     color: #fff;
     font-family: Arial, sans-serif;
 }
@@ -12,7 +15,7 @@ h1 {
 }
 
 canvas {
-    background-color: #222;
+    background-color: rgba(34, 34, 34, 0.8); /* Полупрозрачный фон для канваса */
     border: 2px solid #fff;
     margin-top: 20px;
 }
