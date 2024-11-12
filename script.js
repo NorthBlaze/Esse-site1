@@ -3,13 +3,15 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
+let playerImage = new Image();
+playerImage.src = 'https://avatars.mds.yandex.net/i?id=7a57e697db92cdbff58222d0b0ba2d8f_l-8981113-images-thumbs&n=13';
+
 let player = {
     x: canvas.width / 2 - 20,
     y: canvas.height - 60,
     width: 40,
     height: 40,
-    color: 'cyan',
-    speed: 7, // Увеличенная скорость
+    speed: 7,
     bullets: [],
 };
 
@@ -19,27 +21,20 @@ let score = 0;
 let level = 1;
 let isGameOver = false;
 
-// Загрузка изображений для игрока и врагов
-const playerImage = new Image();
-playerImage.src = 'player.png'; // Замените на фактическое имя файла для изображения игрока
-
-const enemyImage = new Image();
-enemyImage.src = 'enemy.png'; // Замените на фактическое имя файла для изображения врага
-
 function drawPlayer() {
     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 }
 
 function drawEnemies() {
     enemies.forEach((enemy, index) => {
-        ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+        ctx.fillStyle = 'cyan'; // Враги остаются блоками
+        ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         enemy.y += enemySpeed;
-        
+
+        // Проверка, если враг выходит за пределы канваса или сталкивается с игроком
         if (enemy.y > canvas.height) {
             enemies.splice(index, 1);
-        }
-
-        if (
+        } else if (
             enemy.x < player.x + player.width &&
             enemy.x + enemy.width > player.x &&
             enemy.y < player.y + player.height &&
