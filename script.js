@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 600;
 
+// Загрузка изображения для игрока
 let playerImage = new Image();
 playerImage.src = 'https://avatars.mds.yandex.net/i?id=7a57e697db92cdbff58222d0b0ba2d8f_l-8981113-images-thumbs&n=13';
 
@@ -27,11 +28,11 @@ function drawPlayer() {
 
 function drawEnemies() {
     enemies.forEach((enemy, index) => {
-        ctx.fillStyle = 'cyan'; // Враги остаются блоками
+        ctx.fillStyle = 'cyan'; // Враги отображаются как блоки
         ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
         enemy.y += enemySpeed;
 
-        // Проверка, если враг выходит за пределы канваса или сталкивается с игроком
+        // Проверка на столкновение с игроком
         if (enemy.y > canvas.height) {
             enemies.splice(index, 1);
         } else if (
@@ -78,7 +79,7 @@ function drawBullets() {
 
 function spawnEnemy() {
     const x = Math.random() * (canvas.width - 40);
-    enemies.push({ x, y: -40, width: 40, height: 40 });
+    enemies.push({ x: x, y: -40, width: 40, height: 40 });
 }
 
 function gameLoop() {
@@ -95,6 +96,7 @@ function gameLoop() {
     drawPlayer();
     drawEnemies();
     drawBullets();
+
     ctx.fillStyle = 'white';
     ctx.fillText(`Score: ${score}`, 10, 30);
     ctx.fillText(`Level: ${level}`, 10, 60);
@@ -129,7 +131,7 @@ function resetGame() {
     gameLoop();
 }
 
-// Управление
+// Управление игроком
 document.addEventListener('keydown', (e) => {
     if (e.key === 'ArrowLeft' && player.x > 0) player.x -= player.speed;
     if (e.key === 'ArrowRight' && player.x + player.width < canvas.width) player.x += player.speed;
