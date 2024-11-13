@@ -1,21 +1,53 @@
-const maze = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
-    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 2, 1]
+const levels = [
+    // Level 1
+    [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+        [1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+        [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+        [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+        [1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+        [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 2, 1]
+    ],
+    // Level 2
+    [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+        [1, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+        [1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 2, 1]
+    ],
+    // Level 3
+    [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+        [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+        [1, 0, 1, 1, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 0, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 0, 0, 1],
+        [1, 0, 0, 0, 0, 1, 1, 1, 0, 1],
+        [1, 1, 1, 1, 0, 0, 0, 1, 0, 1],
+        [1, 0, 0, 0, 0, 1, 0, 1, 0, 1],
+        [1, 0, 1, 1, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 2, 1]
+    ]
 ];
 
-const mazeContainer = document.getElementById('maze');
+let currentLevel = 0;
 let playerPosition = { x: 1, y: 1 };
+const mazeContainer = document.getElementById('maze');
+const levelSelect = document.getElementById('level-select');
 
 function drawMaze() {
     mazeContainer.innerHTML = '';
+    const maze = levels[currentLevel];
     for (let y = 0; y < maze.length; y++) {
         for (let x = 0; x < maze[y].length; x++) {
             const cell = document.createElement('div');
@@ -31,6 +63,7 @@ function drawMaze() {
 }
 
 function movePlayer(dx, dy) {
+    const maze = levels[currentLevel];
     const newX = playerPosition.x + dx;
     const newY = playerPosition.y + dy;
     if (newX >= 0 && newX < maze[0].length && newY >= 0 && newY < maze.length) {
@@ -45,6 +78,12 @@ function movePlayer(dx, dy) {
         }
     }
 }
+
+levelSelect.addEventListener('change', (event) => {
+    currentLevel = parseInt(event.target.value);
+    playerPosition = { x: 1, y: 1 };
+    drawMaze();
+});
 
 document.addEventListener('keydown', (event) => {
     switch (event.key) {
