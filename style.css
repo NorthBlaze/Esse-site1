@@ -6,24 +6,34 @@ body {
     flex-direction: column;
     align-items: center;
     color: white;
+    margin: 0;
 }
 
-h1 {
-    margin-top: 20px;
+h1, h2 {
     text-shadow: 2px 2px 5px black;
+}
+
+#balance-display {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 18px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 10px;
+    border-radius: 5px;
 }
 
 #maze {
     display: grid;
-    grid-template-columns: repeat(30, 25px); /* 30 columns for the big maze */
-    grid-template-rows: repeat(20, 25px); /* 20 rows for the big maze */
+    grid-template-columns: repeat(50, 15px);
+    grid-template-rows: repeat(50, 15px);
     gap: 1px;
     margin-top: 20px;
 }
 
 .cell {
-    width: 25px;
-    height: 25px;
+    width: 15px;
+    height: 15px;
     background-color: white;
     border: 1px solid black;
 }
@@ -38,4 +48,33 @@ h1 {
 
 .end {
     background-color: green;
+}
+
+#skins-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.skin {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 2px solid white;
+    border-radius: 5px;
+}
+
+.skin.locked {
+    opacity: 0.5;
+}
+
+button {
+    margin: 5px;
+    padding: 8px 16px;
+    font-size: 16px;
+    cursor: pointer;
 }
