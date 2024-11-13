@@ -7,15 +7,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
-public class MazeGame extends JFrame {
-    private static final int WIDTH = 50;  // ширина лабиринта (в клетках)
-    private static final int HEIGHT = 50; // высота лабиринта (в клетках)
-    private static final int CELL_SIZE = 15; // размер одной клетки (в пикселях)
+public class MazeGameWithMovement extends JFrame {
+    private static final int WIDTH = 25;  // ширина лабиринта
+    private static final int HEIGHT = 25; // высота лабиринта
+    private static final int CELL_SIZE = 20; // размер одной клетки
     private final int[][] maze = new int[HEIGHT][WIDTH];
-    private final Point playerPosition = new Point(1, 1);
-    private final Point endPosition = new Point(WIDTH - 2, HEIGHT - 2);
+    private final Point playerPosition = new Point(1, 1); // Начальная позиция игрока
+    private final Point endPosition = new Point(WIDTH - 2, HEIGHT - 2); // Конечная позиция
 
-    public MazeGame() {
+    public MazeGameWithMovement() {
         setTitle("Игра в Лабиринт");
         setSize(WIDTH * CELL_SIZE, HEIGHT * CELL_SIZE);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
@@ -23,13 +23,20 @@ public class MazeGame extends JFrame {
         setResizable(false);
 
         generateMaze();
+        
+        // Установка фокуса на окно для обработки событий клавиатуры
+        setFocusable(true);
+        requestFocusInWindow();
+
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
                 movePlayer(e.getKeyCode());
                 repaint();
+
+                // Проверка достижения конца лабиринта
                 if (playerPosition.equals(endPosition)) {
-                    JOptionPane.showMessageDialog(MazeGame.this, "Вы выиграли!");
+                    JOptionPane.showMessageDialog(MazeGameWithMovement.this, "Вы выиграли!");
                     System.exit(0);
                 }
             }
@@ -73,29 +80,26 @@ public class MazeGame extends JFrame {
         }
         int newX = playerPosition.x + dx;
         int newY = playerPosition.y + dy;
+        
+        // Проверка на границы и стены лабиринта
         if (newX >= 0 && newY >= 0 && newX < WIDTH && newY < HEIGHT && maze[newY][newX] == 0) {
             playerPosition.setLocation(newX, newY);
         }
     }
 
     private void generateMaze() {
-        // Инициализация клеток стены
         for (int y = 0; y < HEIGHT; y++) {
             for (int x = 0; x < WIDTH; x++) {
                 maze[y][x] = 1;
             }
         }
-        // Генерация пути с использованием алгоритма случайного блуждания
         carvePath(1, 1);
     }
 
     private void carvePath(int x, int y) {
         maze[y][x] = 0;
         List<int[]> directions = new ArrayList<>(List.of(
-            new int[]{0, -1}, // вверх
-            new int[]{1, 0},  // вправо
-            new int[]{0, 1},  // вниз
-            new int[]{-1, 0}  // влево
+            new int[]{0, -1}, new int[]{1, 0}, new int[]{0, 1}, new int[]{-1, 0}
         ));
         Collections.shuffle(directions, new Random());
 
@@ -111,7 +115,7 @@ public class MazeGame extends JFrame {
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            MazeGame game = new MazeGame();
+            MazeGameWithMovement game = new MazeGameWithMovement();
             game.setVisible(true);
         });
     }
