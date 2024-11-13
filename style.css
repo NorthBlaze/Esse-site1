@@ -15,15 +15,15 @@ h1 {
 
 #maze {
     display: grid;
-    grid-template-columns: repeat(10, 50px);
-    grid-template-rows: repeat(10, 50px);
-    gap: 2px;
+    grid-template-columns: repeat(30, 25px); /* 30 columns for the big maze */
+    grid-template-rows: repeat(20, 25px); /* 20 rows for the big maze */
+    gap: 1px;
     margin-top: 20px;
 }
 
 .cell {
-    width: 50px;
-    height: 50px;
+    width: 25px;
+    height: 25px;
     background-color: white;
     border: 1px solid black;
 }
