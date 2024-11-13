@@ -7,22 +7,30 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="main-menu">
+    <!-- Главное меню -->
+    <div id="main-menu" class="menu">
         <h1>Игра в Лабиринт</h1>
         <p>Выберите уровень, чтобы начать игру и зарабатывать баланс!</p>
-        <button onclick="startGame()">Играть</button>
+        <button onclick="openLevelSelection()">Играть</button>
         <button onclick="openShop()">Магазин</button>
     </div>
 
-    <div id="level-selection" style="display:none;">
+    <!-- Меню выбора уровня -->
+    <div id="level-selection" class="menu" style="display: none;">
         <h2>Выбор уровня</h2>
         <label for="level-select">Выберите уровень:</label>
-        <select id="level-select"></select>
+        <select id="level-select">
+            <option value="1">Уровень 1</option>
+            <option value="2">Уровень 2</option>
+            <option value="3">Уровень 3</option>
+            <!-- Добавьте больше уровней, если необходимо -->
+        </select>
         <button onclick="startLevel()">Начать уровень</button>
         <button onclick="backToMenu()">Вернуться в меню</button>
     </div>
 
-    <div id="game-container" style="display:none;">
+    <!-- Игровое поле -->
+    <div id="game-container" class="menu" style="display: none;">
         <h2>Игра в Лабиринт</h2>
         <div id="balance-display">Баланс: 0₽</div>
         <p>Используйте клавиши со стрелками для перемещения. Доберитесь до зеленого квадрата, чтобы выиграть!</p>
@@ -30,9 +38,12 @@
         <button onclick="backToMenu()">Выход в меню</button>
     </div>
 
-    <div id="shop" style="display:none;">
+    <!-- Магазин скинов -->
+    <div id="shop" class="menu" style="display: none;">
         <h2>Магазин - Покупка скинов</h2>
-        <div id="skins-container"></div>
+        <div id="skins-container">
+            <!-- Скины добавляются динамически из скрипта -->
+        </div>
         <button onclick="backToMenu()">Вернуться в меню</button>
     </div>
 
