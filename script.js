@@ -1,90 +1,66 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const mazeContainer = document.getElementById('maze');
+const maze = [
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 1, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 0, 0, 0, 1, 0, 1],
+    [1, 0, 1, 0, 1, 1, 0, 1, 0, 1],
+    [1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 2, 1]
+];
 
-    // Определение уровня лабиринта (0 - стена, 1 - путь, 2 - начало, 3 - цель)
-    const mazeLayout = [
-        [2, 1, 1, 0, 0, 0, 0, 0, 0, 3],
-        [0, 0, 1, 0, 1, 1, 1, 1, 0, 0],
-        [0, 0, 1, 0, 1, 0, 0, 1, 0, 0],
-        [0, 1, 1, 1, 1, 0, 1, 1, 1, 0],
-        [0, 1, 0, 0, 0, 0, 0, 0, 1, 0],
-        [0, 1, 1, 1, 1, 1, 1, 0, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1, 1, 1, 0],
-        [0, 0, 0, 1, 1, 0, 0, 0, 0, 0],
-        [0, 1, 1, 1, 0, 0, 0, 1, 1, 1],
-        [0, 0, 0, 1, 1, 1, 1, 1, 0, 0]
-    ];
+const mazeContainer = document.getElementById('maze');
+let playerPosition = { x: 1, y: 1 };
 
-    // Отображение лабиринта
-    let playerPosition = { x: 0, y: 0 };
-
-    function renderMaze() {
-        mazeContainer.innerHTML = '';
-        mazeLayout.forEach((row, y) => {
-            row.forEach((cell, x) => {
-                const div = document.createElement('div');
-                div.classList.add('cell');
-                if (cell === 0) div.classList.add('wall');
-                if (cell === 1) div.classList.add('path');
-                if (cell === 2) {
-                    div.classList.add('start');
-                    playerPosition = { x, y };
-                }
-                if (cell === 3) div.classList.add('goal');
-                mazeContainer.appendChild(div);
-            });
-        });
-        updatePlayerPosition();
+function drawMaze() {
+    mazeContainer.innerHTML = '';
+    for (let y = 0; y < maze.length; y++) {
+        for (let x = 0; x < maze[y].length; x++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            if (maze[y][x] === 1) cell.classList.add('wall');
+            if (maze[y][x] === 2) cell.classList.add('end');
+            if (playerPosition.x === x && playerPosition.y === y) {
+                cell.classList.add('start');
+            }
+            mazeContainer.appendChild(cell);
+        }
     }
+}
 
-    // Обновление позиции игрока
-    function updatePlayerPosition() {
-        const cells = mazeContainer.querySelectorAll('.cell');
-        cells.forEach(cell => cell.classList.remove('start'));
-        const playerCell = mazeContainer.querySelector(
-            `.cell:nth-child(${playerPosition.y * 10 + playerPosition.x + 1})`
-        );
-        playerCell.classList.add('start');
-    }
-
-    // Перемещение игрока
-    function movePlayer(dx, dy) {
-        const newX = playerPosition.x + dx;
-        const newY = playerPosition.y + dy;
-
-        if (newX >= 0 && newX < 10 && newY >= 0 && newY < 10) {
-            const nextCell = mazeLayout[newY][newX];
-            if (nextCell !== 0) { // 0 - стена
-                playerPosition.x = newX;
-                playerPosition.y = newY;
-                updatePlayerPosition();
-
-                // Проверка, достиг ли игрок цели
-                if (nextCell === 3) {
-                    alert('Поздравляем! Вы достигли цели!');
-                    renderMaze(); // Перезапуск игры
-                }
+function movePlayer(dx, dy) {
+    const newX = playerPosition.x + dx;
+    const newY = playerPosition.y + dy;
+    if (newX >= 0 && newX < maze[0].length && newY >= 0 && newY < maze.length) {
+        if (maze[newY][newX] !== 1) {
+            playerPosition = { x: newX, y: newY };
+            drawMaze();
+            if (maze[newY][newX] === 2) {
+                alert("Congratulations! You've reached the end of the maze!");
+                playerPosition = { x: 1, y: 1 };
+                drawMaze();
             }
         }
     }
+}
 
-    // Управление WASD
-    document.addEventListener('keydown', (event) => {
-        switch (event.key) {
-            case 'w':
-                movePlayer(0, -1);
-                break;
-            case 's':
-                movePlayer(0, 1);
-                break;
-            case 'a':
-                movePlayer(-1, 0);
-                break;
-            case 'd':
-                movePlayer(1, 0);
-                break;
-        }
-    });
-
-    renderMaze(); // Отобразить лабиринт при загрузке
+document.addEventListener('keydown', (event) => {
+    switch (event.key) {
+        case 'ArrowUp':
+            movePlayer(0, -1);
+            break;
+        case 'ArrowDown':
+            movePlayer(0, 1);
+            break;
+        case 'ArrowLeft':
+            movePlayer(-1, 0);
+            break;
+        case 'ArrowRight':
+            movePlayer(1, 0);
+            break;
+    }
 });
+
+drawMaze();
