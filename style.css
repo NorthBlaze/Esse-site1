@@ -27,14 +27,27 @@ button {
 
 #maze {
     display: grid;
-    grid-template-columns: repeat(15, 40px); /* пример размера сетки */
+    grid-template-columns: repeat(10, 40px); /* Количество колонок соответствует ширине лабиринта */
     gap: 2px;
 }
 
-#skins-container button {
-    width: 50px;
-    height: 50px;
-    margin: 5px;
-    border: none;
-    cursor: pointer;
+.cell {
+    width: 40px;
+    height: 40px;
+}
+
+.wall {
+    background-color: black;
+}
+
+.path {
+    background-color: white;
+}
+
+.player {
+    background-color: blue;
+}
+
+.goal {
+    background-color: green;
 }
