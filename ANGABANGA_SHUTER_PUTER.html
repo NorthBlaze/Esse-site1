@@ -3,12 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Зомби-выживание</title>
-    <link rel="stylesheet" href="../style/style.css"> <!-- Путь к CSS -->
+    <title>Maze Game</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
-    <button id="restartButton" onclick="resetGame()">Restart</button>
-    <script src="../script/game.js"></script> <!-- Путь к JS -->
+    <h1>Maze Game</h1>
+    <div id="maze">
+        <div class="cell start" id="player"></div>
+        <div class="cell goal"></div>
+        <!-- стены и путь лабиринта -->
+        <div class="cell wall"></div>
+        <div class="cell path"></div>
+        <!-- и так далее, добавьте элементы для лабиринта -->
+    </div>
+    <script src="script.js"></script>
 </body>
 </html>
