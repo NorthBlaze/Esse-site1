@@ -1,83 +1,40 @@
 body {
     font-family: Arial, sans-serif;
-    background-color: black; /* Черный фон */
-    color: white; /* Белый цвет текста для видимости */
+    text-align: center;
+    background-color: #333;
+    color: #fff;
+}
+
+.menu {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: 0;
+    justify-content: center;
+    min-height: 100vh;
 }
 
-h1, h2, p, label, button {
-    color: white; /* Белый цвет текста */
+button {
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    cursor: pointer;
 }
 
 #balance-display {
-    position: absolute;
-    top: 10px;
-    right: 10px;
     font-size: 18px;
-    background-color: rgba(255, 255, 255, 0.2); /* Полупрозрачный белый фон */
-    color: white;
-    padding: 5px 10px;
-    border-radius: 5px;
+    margin-bottom: 15px;
 }
 
 #maze {
     display: grid;
-    grid-template-columns: repeat(50, 15px);
-    grid-template-rows: repeat(50, 15px);
-    gap: 1px;
-    margin-top: 20px;
+    grid-template-columns: repeat(15, 40px); /* пример размера сетки */
+    gap: 2px;
 }
 
-.cell {
-    width: 15px;
-    height: 15px;
-    background-color: white;
-    border: 1px solid black;
-}
-
-.wall {
-    background-color: black;
-}
-
-.start {
-    background-color: blue;
-}
-
-.end {
-    background-color: green;
-}
-
-#skins-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.skin {
+#skins-container button {
     width: 50px;
     height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    border: 2px solid white;
-    border-radius: 5px;
-}
-
-.skin.locked {
-    opacity: 0.5;
-}
-
-button {
     margin: 5px;
-    padding: 8px 16px;
-    font-size: 16px;
+    border: none;
     cursor: pointer;
-    background-color: #ccc;
-    color: black;
-    border: 1px solid white;
 }
