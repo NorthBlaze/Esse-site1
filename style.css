@@ -1,6 +1,6 @@
 body {
     font-family: Arial, sans-serif;
-    background-image: url('background.jpg'); /* Замените на путь к вашему изображению */
+    background-image: url('background.jpg'); /* Replace with your image path */
     background-size: cover;
     display: flex;
     flex-direction: column;
