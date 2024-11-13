@@ -1,22 +1,35 @@
 body {
-    margin: 0;
-    background-color: #8fbc8f;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100vh;
+    font-family: Arial, sans-serif;
 }
 
-canvas {
-    border: 2px solid #000;
+#maze {
+    display: grid;
+    grid-template-columns: repeat(10, 40px);
+    grid-template-rows: repeat(10, 40px);
+    gap: 2px;
 }
 
-#restartButton {
-    display: none;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    padding: 10px;
-    font-size: 20px;
+.cell {
+    width: 40px;
+    height: 40px;
+}
+
+.start {
+    background-color: blue;
+}
+
+.goal {
+    background-color: green;
+}
+
+.wall {
+    background-color: black;
+}
+
+.path {
+    background-color: white;
 }
