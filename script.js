@@ -4,40 +4,49 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.List;
 
-public class MazeGameWithMenu extends JFrame {
-    private static final int WIDTH = 25;
-    private static final int HEIGHT = 25;
-    private static final int CELL_SIZE = 20;
+public class MazeGame extends JFrame {
+    private static final int WIDTH = 15;  // ширина лабиринта
+    private static final int HEIGHT = 15; // высота лабиринта
+    private static final int CELL_SIZE = 40; // размер одной клетки
 
     private JPanel mainMenu;
     private JPanel gamePanel;
     private JPanel shopPanel;
 
-    private int currentLevel = 0;
-    private final int[][][] levels;
     private int[][] maze;
-    private final Point playerPosition = new Point(1, 1);
-    private final Point endPosition = new Point(WIDTH - 2, HEIGHT - 2);
+    private Point playerPosition;
     private Color playerColor = Color.BLUE;
 
-    public MazeGameWithMenu() {
+    public MazeGame() {
         setTitle("Игра в Лабиринт");
-        setSize(WIDTH * CELL_SIZE + 200, HEIGHT * CELL_SIZE + 100);
+        setSize(WIDTH * CELL_SIZE, HEIGHT * CELL_SIZE + 50);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setResizable(false);
 
-        levels = createLevels();
-        maze = levels[currentLevel];
-
+        initializeMaze();
         createMainMenu();
         createGamePanel();
         createShopPanel();
 
-        add(mainMenu);
+        add(mainMenu);  // Начинаем с главного меню
+    }
+
+    private void initializeMaze() {
+        maze = new int[][]{
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+            {1, 1, 1, 0, 1, 0, 1, 1, 0, 1, 0, 1, 1, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1},
+            {1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+            {1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1},
+            {1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1},
+            {1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        };
+        playerPosition = new Point(1, 1);
     }
 
     private void createMainMenu() {
@@ -50,10 +59,6 @@ public class MazeGameWithMenu extends JFrame {
         title.setForeground(Color.WHITE);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel instruction = new JLabel("Выберите уровень, чтобы начать игру и зарабатывать баланс!");
-        instruction.setForeground(Color.WHITE);
-        instruction.setAlignmentX(Component.CENTER_ALIGNMENT);
-
         JButton playButton = new JButton("Играть");
         playButton.setAlignmentX(Component.CENTER_ALIGNMENT);
         playButton.addActionListener(e -> startGame());
@@ -64,8 +69,6 @@ public class MazeGameWithMenu extends JFrame {
 
         mainMenu.add(Box.createVerticalStrut(50));
         mainMenu.add(title);
-        mainMenu.add(Box.createVerticalStrut(20));
-        mainMenu.add(instruction);
         mainMenu.add(Box.createVerticalStrut(20));
         mainMenu.add(playButton);
         mainMenu.add(Box.createVerticalStrut(10));
@@ -90,10 +93,9 @@ public class MazeGameWithMenu extends JFrame {
             public void keyPressed(KeyEvent e) {
                 movePlayer(e.getKeyCode());
                 repaint();
-
-                if (playerPosition.equals(endPosition)) {
-                    JOptionPane.showMessageDialog(gamePanel, "Вы прошли уровень " + (currentLevel + 1) + "!");
-                    nextLevel();
+                if (playerPosition.equals(new Point(WIDTH - 2, HEIGHT - 2))) {
+                    JOptionPane.showMessageDialog(gamePanel, "Вы выиграли!");
+                    returnToMenu();
                 }
             }
         });
@@ -107,10 +109,9 @@ public class MazeGameWithMenu extends JFrame {
         JLabel shopTitle = new JLabel("Магазин - Выберите цвет скина");
         shopTitle.setForeground(Color.WHITE);
         shopTitle.setFont(new Font("Arial", Font.BOLD, 18));
-
         shopPanel.add(shopTitle);
 
-        List<Color> colors = List.of(Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PINK, Color.CYAN);
+        Color[] colors = {Color.BLUE, Color.RED, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PINK, Color.CYAN};
         for (Color color : colors) {
             JButton colorButton = new JButton();
             colorButton.setBackground(color);
@@ -125,25 +126,6 @@ public class MazeGameWithMenu extends JFrame {
         JButton backButton = new JButton("Назад в меню");
         backButton.addActionListener(e -> returnToMenu());
         shopPanel.add(backButton);
-    }
-
-    private int[][][] createLevels() {
-        return new int[][][]{
-            {
-                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-                {1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1},
-                {1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1},
-                {1, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1},
-                {1, 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1},
-                {1, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1},
-                {1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1},
-                {1, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1},
-                {1, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 1, 0, 1},
-                {1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1},
-                {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-            }
-            // Добавьте другие уровни в том же формате
-        };
     }
 
     private void startGame() {
@@ -170,11 +152,11 @@ public class MazeGameWithMenu extends JFrame {
     }
 
     private void drawMaze(Graphics g) {
-        for (int y = 0; y < maze.length; y++) {
-            for (int x = 0; x < maze[y].length; x++) {
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
                 if (maze[y][x] == 1) {
                     g.setColor(Color.BLACK);
-                } else if (new Point(x, y).equals(endPosition)) {
+                } else if (new Point(x, y).equals(new Point(WIDTH - 2, HEIGHT - 2))) {
                     g.setColor(Color.GREEN);
                 } else {
                     g.setColor(Color.WHITE);
@@ -205,16 +187,9 @@ public class MazeGameWithMenu extends JFrame {
         }
     }
 
-    private void nextLevel() {
-        currentLevel = (currentLevel + 1) % levels.length;
-        maze = levels[currentLevel];
-        playerPosition.setLocation(1, 1);
-        repaint();
-    }
-
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            MazeGameWithMenu game = new MazeGameWithMenu();
+            MazeGame game = new MazeGame();
             game.setVisible(true);
         });
     }
