@@ -1,167 +1,118 @@
-let balance = 0;
-let currentLevel = 0;
-let playerSkin = 'blue'; // Стандартный скин игрока
-const skins = [];
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
-// Генерируем скины (140 скинов с разными ценами)
-const skinColors = ['#FF5733', '#33FF57', '#3357FF', '#57FF33', '#FF33FF', '#FFFF33', '#33FFFF', '#FF5733'];
-for (let i = 0; i < 140; i++) {
-    skins.push({
-        color: skinColors[i % skinColors.length],
-        price: Math.floor(Math.random() * 100) + 20,
-        unlocked: false
-    });
-}
+public class MazeGame extends JFrame {
+    private static final int WIDTH = 50;  // ширина лабиринта (в клетках)
+    private static final int HEIGHT = 50; // высота лабиринта (в клетках)
+    private static final int CELL_SIZE = 15; // размер одной клетки (в пикселях)
+    private final int[][] maze = new int[HEIGHT][WIDTH];
+    private final Point playerPosition = new Point(1, 1);
+    private final Point endPosition = new Point(WIDTH - 2, HEIGHT - 2);
 
-// Добавляем уровни (50 уровней, каждый 50x50 клеток, сложность гарантирована)
-const levels = Array.from({ length: 50 }, () => generateMaze(50, 50));
+    public MazeGame() {
+        setTitle("Игра в Лабиринт");
+        setSize(WIDTH * CELL_SIZE, HEIGHT * CELL_SIZE);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setResizable(false);
 
-// Обновляем баланс на экране
-function updateBalanceDisplay() {
-    document.getElementById('balance-display').innerText = `Баланс: ${balance}₽`;
-}
-
-// Генерируем проходимый лабиринт с использованием алгоритма для гарантии пути
-function generateMaze(width, height) {
-    const maze = Array(height).fill().map(() => Array(width).fill(1));
-    
-    // Создаем начальный путь с использованием алгоритма случайного блуждания
-    let stack = [{ x: 1, y: 1 }];
-    maze[1][1] = 0;
-    
-    while (stack.length > 0) {
-        const current = stack[stack.length - 1];
-        const directions = shuffle([{ x: 0, y: -1 }, { x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }]);
-        let moved = false;
-        
-        for (const { x, y } of directions) {
-            const nx = current.x + x * 2;
-            const ny = current.y + y * 2;
-            if (nx > 0 && ny > 0 && nx < width && ny < height && maze[ny][nx] === 1) {
-                maze[ny][nx] = 0;
-                maze[current.y + y][current.x + x] = 0;
-                stack.push({ x: nx, y: ny });
-                moved = true;
-                break;
-            }
-        }
-        
-        if (!moved) stack.pop();
-    }
-    
-    maze[0][1] = 0; // Стартовая позиция
-    maze[height - 1][width - 2] = 2; // Финиш
-    
-    return maze;
-}
-
-// Перемешиваем массив для случайного направления
-function shuffle(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-}
-
-// Начать игру
-function startGame() {
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('level-selection').style.display = 'block';
-    populateLevelOptions();
-}
-
-// Заполняем уровни в списке выбора уровня
-function populateLevelOptions() {
-    const levelSelect = document.getElementById('level-select');
-    levelSelect.innerHTML = '';
-    for (let i = 0; i < levels.length; i++) {
-        const option = document.createElement('option');
-        option.value = i;
-        option.text = `Уровень ${i + 1}`;
-        levelSelect.appendChild(option);
-    }
-}
-
-// Начать выбранный уровень
-function startLevel() {
-    currentLevel = parseInt(document.getElementById('level-select').value);
-    document.getElementById('level-selection').style.display = 'none';
-    document.getElementById('game-container').style.display = 'block';
-    playerPosition = { x: 1, y: 0 };
-    drawMaze();
-    updateBalanceDisplay();
-}
-
-// Вернуться в главное меню
-function backToMenu() {
-    document.getElementById('main-menu').style.display = 'block';
-    document.getElementById('level-selection').style.display = 'none';
-    document.getElementById('game-container').style.display = 'none';
-    document.getElementById('shop').style.display = 'none';
-}
-
-// Рисуем лабиринт
-function drawMaze() {
-    const mazeContainer = document.getElementById('maze');
-    mazeContainer.innerHTML = '';
-    const maze = levels[currentLevel];
-    mazeContainer.style.gridTemplateColumns = `repeat(${maze[0].length}, 15px)`;
-    mazeContainer.style.gridTemplateRows = `repeat(${maze.length}, 15px)`;
-
-    for (let y = 0; y < maze.length; y++) {
-        for (let x = 0; x < maze[y].length; x++) {
-            const cell = document.createElement('div');
-            cell.classList.add('cell');
-            if (maze[y][x] === 1) cell.classList.add('wall');
-            if (maze[y][x] === 2) cell.classList.add('end');
-            if (playerPosition.x === x && playerPosition.y === y) {
-                cell.classList.add('start');
-                cell.style.backgroundColor = playerSkin;
-            }
-            mazeContainer.appendChild(cell);
-        }
-    }
-}
-
-// Открыть магазин
-function openShop() {
-    document.getElementById('main-menu').style.display = 'none';
-    document.getElementById('shop').style.display = 'block';
-    renderShop();
-}
-
-// Отображаем магазин скинов
-function renderShop() {
-    const skinsContainer = document.getElementById('skins-container');
-    skinsContainer.innerHTML = '';
-    skins.forEach((skin, index) => {
-        const skinDiv = document.createElement('div');
-        skinDiv.classList.add('skin');
-        skinDiv.style.backgroundColor = skin.color;
-        skinDiv.innerText = `${skin.price}₽`;
-        if (skin.unlocked) {
-            skinDiv.classList.remove('locked');
-            skinDiv.onclick = () => {
-                playerSkin = skin.color;
-                backToMenu();
-            };
-        } else {
-            skinDiv.classList.add('locked');
-            skinDiv.onclick = () => {
-                if (balance >= skin.price) {
-                    balance -= skin.price;
-                    skin.unlocked = true;
-                    updateBalanceDisplay();
-                    renderShop();
-                } else {
-                    alert("Недостаточно средств!");
+        generateMaze();
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                movePlayer(e.getKeyCode());
+                repaint();
+                if (playerPosition.equals(endPosition)) {
+                    JOptionPane.showMessageDialog(MazeGame.this, "Вы выиграли!");
+                    System.exit(0);
                 }
-            };
-        }
-        skinsContainer.appendChild(skinDiv);
-    });
-}
+            }
+        });
+    }
 
-// Инициализация
-backToMenu();
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        drawMaze(g);
+        drawPlayer(g);
+    }
+
+    private void drawMaze(Graphics g) {
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                if (maze[y][x] == 1) {
+                    g.setColor(Color.BLACK);
+                } else if (new Point(x, y).equals(endPosition)) {
+                    g.setColor(Color.GREEN);
+                } else {
+                    g.setColor(Color.WHITE);
+                }
+                g.fillRect(x * CELL_SIZE, y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            }
+        }
+    }
+
+    private void drawPlayer(Graphics g) {
+        g.setColor(Color.BLUE);
+        g.fillRect(playerPosition.x * CELL_SIZE, playerPosition.y * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+    }
+
+    private void movePlayer(int keyCode) {
+        int dx = 0, dy = 0;
+        switch (keyCode) {
+            case KeyEvent.VK_UP -> dy = -1;
+            case KeyEvent.VK_DOWN -> dy = 1;
+            case KeyEvent.VK_LEFT -> dx = -1;
+            case KeyEvent.VK_RIGHT -> dx = 1;
+        }
+        int newX = playerPosition.x + dx;
+        int newY = playerPosition.y + dy;
+        if (newX >= 0 && newY >= 0 && newX < WIDTH && newY < HEIGHT && maze[newY][newX] == 0) {
+            playerPosition.setLocation(newX, newY);
+        }
+    }
+
+    private void generateMaze() {
+        // Инициализация клеток стены
+        for (int y = 0; y < HEIGHT; y++) {
+            for (int x = 0; x < WIDTH; x++) {
+                maze[y][x] = 1;
+            }
+        }
+        // Генерация пути с использованием алгоритма случайного блуждания
+        carvePath(1, 1);
+    }
+
+    private void carvePath(int x, int y) {
+        maze[y][x] = 0;
+        List<int[]> directions = new ArrayList<>(List.of(
+            new int[]{0, -1}, // вверх
+            new int[]{1, 0},  // вправо
+            new int[]{0, 1},  // вниз
+            new int[]{-1, 0}  // влево
+        ));
+        Collections.shuffle(directions, new Random());
+
+        for (int[] dir : directions) {
+            int newX = x + dir[0] * 2;
+            int newY = y + dir[1] * 2;
+            if (newX > 0 && newY > 0 && newX < WIDTH && newY < HEIGHT && maze[newY][newX] == 1) {
+                maze[y + dir[1]][x + dir[0]] = 0;
+                carvePath(newX, newY);
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> {
+            MazeGame game = new MazeGame();
+            game.setVisible(true);
+        });
+    }
+}
