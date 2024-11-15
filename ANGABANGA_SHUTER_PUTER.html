@@ -3,16 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Гоночная игра - отладка управления</title>
+    <title>Гоночная игра</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; width: 100vw; height: 100vh; background-color: #222; }
-        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; }
-        #timer { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; }
+        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; display: none; }
+        #timer { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; display: none; }
         #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 48px; font-weight: bold; display: none; }
+        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 36px; text-align: center; }
+        #startButton { font-size: 24px; padding: 10px 20px; cursor: pointer; }
     </style>
 </head>
 <body>
+    <div id="startScreen">
+        <p>Добро пожаловать в гоночную игру!</p>
+        <button id="startButton" onclick="startGame()">Начать игру</button>
+    </div>
     <div id="score">Очки: 0</div>
     <div id="timer">Время: 0</div>
     <div id="gameOver">Игра окончена!</div>
@@ -21,84 +27,109 @@
     <script>
         const { Engine, Render, World, Bodies, Body, Events } = Matter;
 
-        const engine = Engine.create();
-        const world = engine.world;
+        let engine;
+        let render;
+        let car;
+        let ground;
+        let obstacles = [];
+        let finishLine;
+        let gameOver = false;
+        let startTime;
+        let score = 0;
 
-        // Настройка рендера
-        const render = Render.create({
-            element: document.body,
-            engine: engine,
-            options: {
-                width: window.innerWidth,
-                height: window.innerHeight,
-                background: '#222',
-                wireframes: true // wireframes для отладки
-            }
+        function init() {
+            engine = Engine.create();
+            render = Render.create({
+                element: document.body,
+                engine: engine,
+                options: {
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                    background: '#222',
+                    wireframes: false
+                }
+            });
+
+            // Земля
+            ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 10, window.innerWidth, 60, { isStatic: true });
+            World.add(engine.world, ground);
+
+            // Машина
+            car = Bodies.rectangle(100, window.innerHeight - 100, 80, 40, { density: 0.001 });
+            World.add(engine.world, car);
+
+            // Препятствия
+            obstacles = [
+                Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 200, 100, 20, { isStatic: true }),
+                Bodies.rectangle(window.innerWidth / 1.5, window.innerHeight - 300, 100, 20, { isStatic: true }),
+                Bodies.rectangle(window.innerWidth / 1.2, window.innerHeight - 400, 100, 20, { isStatic: true })
+            ];
+            World.add(engine.world, obstacles);
+
+            // Финишная линия
+            finishLine = Bodies.rectangle(window.innerWidth - 100, window.innerHeight - 100, 20, 100, { isStatic: true, render: { fillStyle: 'yellow' } });
+            World.add(engine.world, finishLine);
+
+            Engine.run(engine);
+            Render.run(render);
+        }
+
+        function startGame() {
+            document.getElementById("startScreen").style.display = "none";
+            document.getElementById("score").style.display = "block";
+            document.getElementById("timer").style.display = "block";
+            gameOver = false;
+            startTime = Date.now();
+            score = 0;
+            init();
+            addControls();
+            updateTimer();
+        }
+
+        function addControls() {
+            document.addEventListener("keydown", (event) => {
+                if (gameOver) return;
+                if (event.key === "ArrowRight") {
+                    Body.applyForce(car, car.position, { x: 0.005, y: 0 });
+                }
+                if (event.key === "ArrowLeft") {
+                    Body.applyForce(car, car.position, { x: -0.005, y: 0 });
+                }
+                if (event.key === "ArrowUp") {
+                    Body.applyForce(car, car.position, { x: 0, y: -0.005 });
+                }
+                if (event.key === "ArrowDown") {
+                    Body.applyForce(car, car.position, { x: 0, y: 0.005 });
+                }
+            });
+        }
+
+        function updateTimer() {
+            if (gameOver) return;
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById("timer").textContent = "Время: " + elapsedTime;
+            document.getElementById("score").textContent = "Очки: " + elapsedTime;
+            score = elapsedTime;
+            requestAnimationFrame(updateTimer);
+        }
+
+        function endGame(message) {
+            gameOver = true;
+            document.getElementById("gameOver").textContent = message;
+            document.getElementById("gameOver").style.display = "block";
+        }
+
+        Events.on(engine, 'collisionStart', function(event) {
+            const pairs = event.pairs;
+            pairs.forEach(pair => {
+                if (obstacles.includes(pair.bodyA) || obstacles.includes(pair.bodyB)) {
+                    endGame("Вы столкнулись! Игра окончена.");
+                }
+                if (pair.bodyA === finishLine || pair.bodyB === finishLine) {
+                    endGame("Поздравляем! Вы достигли финиша!");
+                }
+            });
         });
-
-        window.addEventListener("resize", () => {
-            render.canvas.width = window.innerWidth;
-            render.canvas.height = window.innerHeight;
-        });
-
-        // Создаем машину
-        const car = Bodies.rectangle(100, window.innerHeight - 100, 80, 40, { density: 0.001 });
-        World.add(world, car);
-
-        // Создаем землю
-        const ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 10, window.innerWidth, 60, { isStatic: true });
-        World.add(world, ground);
-
-        // Создаем препятствия
-        const obstacle1 = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 200, 100, 20, { isStatic: true });
-        const obstacle2 = Bodies.rectangle(window.innerWidth / 1.5, window.innerHeight - 300, 100, 20, { isStatic: true });
-        World.add(world, [obstacle1, obstacle2]);
-
-        // Движущееся препятствие
-        const movingObstacle = Bodies.rectangle(window.innerWidth, window.innerHeight - 400, 50, 50, { isStatic: false });
-        Body.setVelocity(movingObstacle, { x: -2, y: 0 });
-        World.add(world, movingObstacle);
-
-        // Управление машиной
-        let isAccelerating = false;
-        let isReversing = false;
-
-        document.addEventListener("keydown", (event) => {
-            if (event.key === "ArrowRight") {
-                isAccelerating = true;
-            }
-            if (event.key === "ArrowLeft") {
-                isReversing = true;
-            }
-        });
-
-        document.addEventListener("keyup", (event) => {
-            if (event.key === "ArrowRight") {
-                isAccelerating = false;
-            }
-            if (event.key === "ArrowLeft") {
-                isReversing = false;
-            }
-        });
-
-        // Логика движения
-        Matter.Events.on(engine, "beforeUpdate", function() {
-            if (isAccelerating) {
-                Body.applyForce(car, car.position, { x: 0.005, y: 0 });
-            }
-            if (isReversing) {
-                Body.applyForce(car, car.position, { x: -0.005, y: 0 });
-            }
-
-            // Логика возврата движущегося препятствия
-            if (movingObstacle.position.x < 0) {
-                Body.setPosition(movingObstacle, { x: window.innerWidth, y: window.innerHeight - 400 });
-                Body.setVelocity(movingObstacle, { x: -2, y: 0 });
-            }
-        });
-
-        Engine.run(engine);
-        Render.run(render);
     </script>
 </body>
 </html>
