@@ -156,6 +156,7 @@
             requestAnimationFrame(updateGame);
         }
 
+        // Убедимся, что события на столкновение с бонусами и препятствиями правильно отслеживаются
         Events.on(engine, 'collisionStart', function(event) {
             event.pairs.forEach(pair => {
                 const labels = [pair.bodyA.label, pair.bodyB.label];
