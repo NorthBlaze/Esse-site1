@@ -6,7 +6,7 @@
     <title>Гоночная игра</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-        canvas { display: block; background-color: #222; } /* Цвет фона для сцены */
+        canvas { display: block; width: 100vw; height: 100vh; background-color: #222; } /* Растягиваем канвас на весь экран */
         #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; }
         #timer { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; }
         #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 48px; font-weight: bold; display: none; }
@@ -34,11 +34,16 @@
             element: document.body,
             engine: engine,
             options: {
-                width: 800,
-                height: 600,
-                background: '#222', // Цвет фона для лучшей видимости
-                wireframes: false // Отключаем wireframes для отображения текстур
+                width: window.innerWidth,
+                height: window.innerHeight,
+                background: '#222',
+                wireframes: false
             }
+        });
+
+        window.addEventListener("resize", () => {
+            render.canvas.width = window.innerWidth;
+            render.canvas.height = window.innerHeight;
         });
 
         // Звуковые эффекты
@@ -61,21 +66,21 @@
         World.add(world, car);
 
         // Земля (дорожка)
-        const ground = Bodies.rectangle(400, 590, 810, 60, { isStatic: true });
+        const ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 10, window.innerWidth, 60, { isStatic: true });
         World.add(world, ground);
 
         // Препятствия
-        const obstacle1 = Bodies.rectangle(400, 400, 100, 20, { isStatic: true });
-        const obstacle2 = Bodies.rectangle(600, 300, 100, 20, { isStatic: true });
+        const obstacle1 = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 200, 100, 20, { isStatic: true });
+        const obstacle2 = Bodies.rectangle(window.innerWidth / 1.5, window.innerHeight - 300, 100, 20, { isStatic: true });
         World.add(world, [obstacle1, obstacle2]);
 
         // Динамическое препятствие
-        const movingObstacle = Bodies.rectangle(800, 300, 50, 50, { isStatic: false });
+        const movingObstacle = Bodies.rectangle(window.innerWidth, window.innerHeight - 400, 50, 50, { isStatic: false });
         Body.setVelocity(movingObstacle, { x: -2, y: 0 });
         World.add(world, movingObstacle);
 
         // Бонусы
-        const bonus1 = Bodies.circle(500, 200, 15, { isStatic: true });
+        const bonus1 = Bodies.circle(window.innerWidth / 1.3, window.innerHeight - 500, 15, { isStatic: true });
         bonus1.render.sprite = { texture: 'https://www.example.com/bonus.png', xScale: 0.1, yScale: 0.1 };
         World.add(world, bonus1);
 
@@ -103,11 +108,11 @@
             }
             if (event.key === "ArrowDown") {
                 isBraking = true;
-                brakeSound.play(); // Звук тормоза
+                brakeSound.play();
             }
             if (event.key === "Shift") {
                 isAccelerating = true;
-                accelerateSound.play(); // Звук ускорения
+                accelerateSound.play();
             }
         });
 
