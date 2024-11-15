@@ -62,8 +62,9 @@
                 }
             });
 
-            car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 100, {
-                density: 0.001,
+            // Машина, зафиксированная по вертикали
+            car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 100, 50, 100, {
+                isStatic: true, // Фиксируем машину по вертикали, чтобы она не падала вниз
                 label: 'car'
             });
             World.add(engine.world, car);
