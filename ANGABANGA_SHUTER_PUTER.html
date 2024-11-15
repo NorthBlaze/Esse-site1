@@ -63,8 +63,8 @@
             });
 
             car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 100, {
-                isStatic: true,
-                density: 0.001
+                density: 0.001,
+                label: 'car'
             });
             World.add(engine.world, car);
 
@@ -111,7 +111,7 @@
         function createObstacle() {
             const x = Math.random() * (window.innerWidth - 50) + 25;
             const y = Math.random() * -window.innerHeight;
-            const obstacle = Bodies.rectangle(x, y, 80, 20, { isStatic: true });
+            const obstacle = Bodies.rectangle(x, y, 80, 20, { isStatic: true, label: 'obstacle' });
             obstacles.push(obstacle);
             World.add(engine.world, obstacle);
         }
@@ -152,27 +152,32 @@
             document.getElementById("score").textContent = "Очки: " + points;
             score = elapsedTime;
 
-            Events.on(engine, 'collisionStart', function(event) {
-                event.pairs.forEach(pair => {
-                    if (obstacles.includes(pair.bodyA) || obstacles.includes(pair.bodyB)) {
-                        health--;
-                        if (health <= 0) {
-                            endGame("Вы столкнулись! Игра окончена.");
-                        }
-                    }
-                    if (pair.bodyA.label === 'bonus' || pair.bodyB.label === 'bonus') {
-                        points += 5;
-                        const bonus = pair.bodyA.label === 'bonus' ? pair.bodyA : pair.bodyB;
-                        World.remove(engine.world, bonus);
-                        bonuses = bonuses.filter(b => b !== bonus);
-                        createBonus();
-                        document.getElementById("score").textContent = "Очки: " + points;
-                    }
-                });
-            });
-
             requestAnimationFrame(updateGame);
         }
+
+        Events.on(engine, 'collisionStart', function(event) {
+            event.pairs.forEach(pair => {
+                const labels = [pair.bodyA.label, pair.bodyB.label];
+                
+                // Проверка на столкновение с препятствием
+                if (labels.includes('car') && labels.includes('obstacle')) {
+                    health--;
+                    if (health <= 0) {
+                        endGame("Вы столкнулись! Игра окончена.");
+                    }
+                }
+
+                // Проверка на столкновение с бонусом
+                if (labels.includes('car') && labels.includes('bonus')) {
+                    points += 5;
+                    const bonus = pair.bodyA.label === 'bonus' ? pair.bodyA : pair.bodyB;
+                    World.remove(engine.world, bonus);
+                    bonuses = bonuses.filter(b => b !== bonus);
+                    createBonus();
+                    document.getElementById("score").textContent = "Очки: " + points;
+                }
+            });
+        });
 
         function endGame(message) {
             gameOver = true;
@@ -208,7 +213,7 @@
                 alert("Супер-ускорение активировано!");
             } else if (upgrade === 'magnet' && points >= 15) {
                 points -= 15;
-                alert("Магнит для очков активирован!"); 
+                alert("Магнит для очков активирован!");
             } else {
                 alert("Недостаточно очков для покупки!");
             }
