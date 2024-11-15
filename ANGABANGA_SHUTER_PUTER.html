@@ -77,7 +77,7 @@
         bonus1.render.sprite = { texture: 'https://www.example.com/bonus.png', xScale: 0.1, yScale: 0.1 };
         World.add(world, bonus1);
 
-        let startTime = Date.now();
+        let startTime = null; // Изменено на null, чтобы отслеживать начало движения
         let score = 0;
         let bestScore = localStorage.getItem('bestScore') || 0;
         document.getElementById("record").textContent = "Лучший результат: " + bestScore;
@@ -89,6 +89,8 @@
         let isAccelerating = false;
 
         document.addEventListener("keydown", (event) => {
+            if (!startTime) startTime = Date.now(); // Устанавливаем стартовое время при первом движении
+
             if (event.key === "ArrowRight") Body.applyForce(car, car.position, { x: throttle, y: 0 });
             if (event.key === "ArrowLeft") Body.applyForce(car, car.position, { x: -throttle, y: 0 });
             if (event.key === "ArrowUp") Body.applyForce(car, car.position, { x: 0, y: -throttle });
@@ -108,7 +110,7 @@
         });
 
         setInterval(() => {
-            if (!gameOver) {
+            if (!gameOver && startTime) {
                 const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
                 document.getElementById("timer").textContent = "Время: " + elapsedTime;
                 score = elapsedTime;
@@ -123,7 +125,7 @@
                     crashSound.play();
                     gameOver = true;
                     document.getElementById("gameOver").style.display = "block";
-                    document.getElementById("restart").style.display = "block"; // Показать кнопку для перезапуска
+                    document.getElementById("restart").style.display = "block";
                     if (score > bestScore) {
                         bestScore = score;
                         localStorage.setItem('bestScore', bestScore);
@@ -151,7 +153,6 @@
         Engine.run(engine);
         Render.run(render);
 
-        // Функция для перезапуска игры
         function restartGame() {
             location.reload();
         }
