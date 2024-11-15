@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вертикальная гоночная игра с экономикой</title>
+    <title>Вертикальная гоночная игра с бонусными очками</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; width: 100vw; height: 100vh; background-color: #222; }
@@ -27,7 +27,10 @@
         <h3>Магазин</h3>
         <button class="shop-item" onclick="buyUpgrade('speed')">Увеличить скорость (10 очков)</button><br>
         <button class="shop-item" onclick="buyUpgrade('size')">Уменьшить размер (15 очков)</button><br>
-        <button class="shop-item" onclick="buyUpgrade('shield')">Щит (20 очков)</button>
+        <button class="shop-item" onclick="buyUpgrade('shield')">Щит (20 очков)</button><br>
+        <button class="shop-item" onclick="buyUpgrade('health')">Восстановить здоровье (10 очков)</button><br>
+        <button class="shop-item" onclick="buyUpgrade('boost')">Супер-ускорение (25 очков)</button><br>
+        <button class="shop-item" onclick="buyUpgrade('magnet')">Магнит для очков (15 очков)</button>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
@@ -38,10 +41,12 @@
         let render;
         let car;
         let obstacles = [];
+        let bonuses = []; // массив для бонусных очков
         let gameOver = false;
         let startTime;
         let score = 0;
         let points = 0;
+        let health = 3;
         const movementSpeed = 1.5;
 
         function init() {
@@ -57,22 +62,19 @@
                 }
             });
 
-            // Машина, фиксированная по вертикали, по центру экрана
             car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 100, {
                 isStatic: true,
                 density: 0.001
             });
             World.add(engine.world, car);
 
-            // Создаем начальные препятствия
             for (let i = 0; i < 5; i++) {
                 createObstacle();
+                createBonus(); // создаем бонусные очки
             }
 
             Engine.run(engine);
             Render.run(render);
-
-            // Отображаем магазин
             document.getElementById("shop").style.display = "block";
         }
 
@@ -84,6 +86,7 @@
             startTime = Date.now();
             score = 0;
             points = 0;
+            health = 3;
             init();
             addControls();
             updateGame();
@@ -113,6 +116,14 @@
             World.add(engine.world, obstacle);
         }
 
+        function createBonus() {
+            const x = Math.random() * (window.innerWidth - 50) + 25;
+            const y = Math.random() * -window.innerHeight;
+            const bonus = Bodies.circle(x, y, 10, { isStatic: true, render: { fillStyle: 'yellow' } });
+            bonuses.push(bonus);
+            World.add(engine.world, bonus);
+        }
+
         function updateGame() {
             if (gameOver) return;
 
@@ -126,6 +137,16 @@
                 }
             });
 
+            bonuses.forEach(bonus => {
+                Body.setPosition(bonus, { x: bonus.position.x, y: bonus.position.y + movementSpeed });
+
+                if (bonus.position.y > window.innerHeight) {
+                    World.remove(engine.world, bonus);
+                    bonuses = bonuses.filter(b => b !== bonus);
+                    createBonus();
+                }
+            });
+
             const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
             document.getElementById("timer").textContent = "Время: " + elapsedTime;
             document.getElementById("score").textContent = "Очки: " + points;
@@ -135,7 +156,18 @@
             Events.on(engine, 'collisionStart', function(event) {
                 event.pairs.forEach(pair => {
                     if (obstacles.includes(pair.bodyA) || obstacles.includes(pair.bodyB)) {
-                        endGame("Вы столкнулись! Игра окончена.");
+                        health--;
+                        if (health <= 0) {
+                            endGame("Вы столкнулись! Игра окончена.");
+                        }
+                    }
+                    if (bonuses.includes(pair.bodyA) || bonuses.includes(pair.bodyB)) {
+                        points += 5; // добавляем 5 очков за каждый собранный бонус
+                        const bonus = pair.bodyA === car ? pair.bodyB : pair.bodyA;
+                        World.remove(engine.world, bonus);
+                        bonuses = bonuses.filter(b => b !== bonus);
+                        createBonus();
+                        document.getElementById("score").textContent = "Очки: " + points;
                     }
                 });
             });
@@ -163,9 +195,21 @@
                 alert("Размер уменьшен!");
             } else if (upgrade === 'shield' && points >= 20) {
                 points -= 20;
-                car.isSensor = true; // Временно делает машину "невосприимчивой" к столкновениям
-                setTimeout(() => car.isSensor = false, 5000); // Щит действует 5 секунд
+                car.isSensor = true;
+                setTimeout(() => car.isSensor = false, 5000);
                 alert("Щит активирован!");
+            } else if (upgrade === 'health' && points >= 10) {
+                points -= 10;
+                health = Math.min(health + 1, 3);
+                alert("Здоровье восстановлено!");
+            } else if (upgrade === 'boost' && points >= 25) {
+                points -= 25;
+                Body.setVelocity(car, { x: 0, y: -5 });
+                setTimeout(() => Body.setVelocity(car, { x: 0, y: -movementSpeed }), 5000);
+                alert("Супер-ускорение активировано!");
+            } else if (upgrade === 'magnet' && points >= 15) {
+                points -= 15;
+                alert("Магнит для очков активирован!"); // Можно добавить логику магнита
             } else {
                 alert("Недостаточно очков для покупки!");
             }
