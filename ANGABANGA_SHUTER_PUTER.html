@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вертикальная гоночная игра</title>
+    <title>Вертикальная гоночная игра с экономикой</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; width: 100vw; height: 100vh; background-color: #222; }
         #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; }
         #timer { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; }
         #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 48px; font-weight: bold; display: none; }
+        #shop { position: absolute; bottom: 10px; left: 10px; color: white; font-size: 20px; background-color: rgba(0, 0, 0, 0.7); padding: 10px; display: none; }
         #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 36px; text-align: center; }
-        #startButton { font-size: 24px; padding: 10px 20px; cursor: pointer; }
+        #startButton, .shop-item { font-size: 18px; padding: 10px 20px; cursor: pointer; margin-top: 5px; }
     </style>
 </head>
 <body>
@@ -22,6 +23,12 @@
     <div id="score">Очки: 0</div>
     <div id="timer">Время: 0</div>
     <div id="gameOver">Игра окончена!</div>
+    <div id="shop">
+        <h3>Магазин</h3>
+        <button class="shop-item" onclick="buyUpgrade('speed')">Увеличить скорость (10 очков)</button><br>
+        <button class="shop-item" onclick="buyUpgrade('size')">Уменьшить размер (15 очков)</button><br>
+        <button class="shop-item" onclick="buyUpgrade('shield')">Щит (20 очков)</button>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
@@ -34,6 +41,7 @@
         let gameOver = false;
         let startTime;
         let score = 0;
+        let points = 0;
         const movementSpeed = 1.5;
 
         function init() {
@@ -51,7 +59,7 @@
 
             // Машина, фиксированная по вертикали, по центру экрана
             car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 100, {
-                isStatic: true, // Фиксируем машину по вертикали
+                isStatic: true,
                 density: 0.001
             });
             World.add(engine.world, car);
@@ -63,6 +71,9 @@
 
             Engine.run(engine);
             Render.run(render);
+
+            // Отображаем магазин
+            document.getElementById("shop").style.display = "block";
         }
 
         function startGame() {
@@ -72,6 +83,7 @@
             gameOver = false;
             startTime = Date.now();
             score = 0;
+            points = 0;
             init();
             addControls();
             updateGame();
@@ -81,7 +93,6 @@
             document.addEventListener("keydown", (event) => {
                 if (gameOver) return;
                 if (event.key === "ArrowLeft") {
-                    // Ограничиваем движение машины в пределах экрана
                     if (car.position.x > 25) {
                         Body.translate(car, { x: -10, y: 0 });
                     }
@@ -105,11 +116,9 @@
         function updateGame() {
             if (gameOver) return;
 
-            // Двигаем все препятствия вниз для создания иллюзии движения
             obstacles.forEach(obstacle => {
                 Body.setPosition(obstacle, { x: obstacle.position.x, y: obstacle.position.y + movementSpeed });
 
-                // Если препятствие уходит за нижнюю границу экрана, создаем новое
                 if (obstacle.position.y > window.innerHeight) {
                     World.remove(engine.world, obstacle);
                     obstacles = obstacles.filter(o => o !== obstacle);
@@ -117,13 +126,12 @@
                 }
             });
 
-            // Обновление очков и таймера
             const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
             document.getElementById("timer").textContent = "Время: " + elapsedTime;
-            document.getElementById("score").textContent = "Очки: " + elapsedTime;
+            document.getElementById("score").textContent = "Очки: " + points;
             score = elapsedTime;
+            points = elapsedTime;
 
-            // Проверка столкновений
             Events.on(engine, 'collisionStart', function(event) {
                 event.pairs.forEach(pair => {
                     if (obstacles.includes(pair.bodyA) || obstacles.includes(pair.bodyB)) {
@@ -141,7 +149,29 @@
             document.getElementById("gameOver").style.display = "block";
             Engine.clear(engine);
         }
+
+        function buyUpgrade(upgrade) {
+            if (gameOver) return;
+
+            if (upgrade === 'speed' && points >= 10) {
+                points -= 10;
+                Body.setVelocity(car, { x: 0, y: -3 });
+                alert("Скорость увеличена!");
+            } else if (upgrade === 'size' && points >= 15) {
+                points -= 15;
+                Body.scale(car, 0.8, 0.8);
+                alert("Размер уменьшен!");
+            } else if (upgrade === 'shield' && points >= 20) {
+                points -= 20;
+                car.isSensor = true; // Временно делает машину "невосприимчивой" к столкновениям
+                setTimeout(() => car.isSensor = false, 5000); // Щит действует 5 секунд
+                alert("Щит активирован!");
+            } else {
+                alert("Недостаточно очков для покупки!");
+            }
+
+            document.getElementById("score").textContent = "Очки: " + points;
+        }
     </script>
 </body>
 </html>
-
