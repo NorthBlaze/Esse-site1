@@ -1,28 +1,208 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра в Лабиринт</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Гоночная игра</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; }
+        #timer { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; }
+        #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 48px; font-weight: bold; display: none; }
+        #record { position: absolute; top: 50px; left: 10px; color: white; font-size: 20px; }
+        #bonus { position: absolute; top: 100px; left: 10px; color: yellow; font-size: 20px; }
+    </style>
 </head>
 <body>
-    <!-- Главное меню -->
-    <div id="main-menu" class="menu">
-        <h1>Игра в Лабиринт</h1>
-        <p>Выберите уровень, чтобы начать игру и зарабатывать баланс!</p>
-        <button onclick="startGame()">Играть</button>
-    </div>
+    <div id="score">Очки: 0</div>
+    <div id="timer">Время: 0</div>
+    <div id="gameOver">Игра окончена!</div>
+    <div id="record">Лучший результат: 0</div>
+    <div id="bonus">Бонусов собрано: 0</div>
 
-    <!-- Игровое поле -->
-    <div id="game-container" class="menu" style="display: none;">
-        <h2>Игра в Лабиринт</h2>
-        <div id="balance-display">Баланс: 0₽</div>
-        <p>Используйте клавиши со стрелками для перемещения. Доберитесь до зеленого квадрата, чтобы выиграть!</p>
-        <div id="maze"></div>
-        <button onclick="backToMenu()">Выход в меню</button>
-    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
+    <script>
+        // Создание физического мира
+        const { Engine, Render, World, Bodies, Body, Events, Composite } = Matter;
 
-    <script src="script.js"></script>
+        const engine = Engine.create();
+        const world = engine.world;
+
+        // Настройка рендера
+        const render = Render.create({
+            element: document.body,
+            engine: engine,
+            options: {
+                width: 800,
+                height: 600,
+                wireframes: false
+            }
+        });
+
+        // Звуковые эффекты
+        const crashSound = new Audio('https://www.soundjay.com/button/beep-07.wav');
+        const accelerateSound = new Audio('https://www.soundjay.com/button/beep-01a.mp3');
+        const brakeSound = new Audio('https://www.soundjay.com/button/beep-06.wav');
+        const powerUpSound = new Audio('https://www.soundjay.com/button/beep-09.wav');
+
+        // Настроим текстуру для машины
+        const carImage = new Image();
+        carImage.src = 'https://www.example.com/car.png'; // Заменить на путь к твоей текстуре
+
+        // Фон
+        const background = Bodies.rectangle(400, 300, 800, 600, { isStatic: true });
+        World.add(world, background);
+
+        // Земля (дорожка)
+        const ground = Bodies.rectangle(400, 590, 810, 60, { isStatic: true });
+        World.add(world, ground);
+
+        // Машина
+        const car = Bodies.rectangle(100, 500, 80, 40, { density: 0.001 });
+        car.render.sprite = {
+            texture: carImage.src,
+            xScale: 0.1,
+            yScale: 0.1
+        };
+        World.add(world, car);
+
+        // Уровни сложности
+        let level = 1;
+        let throttle = 0.1;
+
+        // Система рекордов
+        let bestScore = localStorage.getItem('bestScore') || 0;
+        document.getElementById("record").textContent = "Лучший результат: " + bestScore;
+
+        // Управление машиной
+        let isBraking = false;
+        let isAccelerating = false;
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowRight") {
+                Body.applyForce(car, car.position, { x: throttle, y: 0 });
+            }
+            if (event.key === "ArrowLeft") {
+                Body.applyForce(car, car.position, { x: -throttle, y: 0 });
+            }
+            if (event.key === "ArrowUp") {
+                Body.applyForce(car, car.position, { x: 0, y: -throttle });
+            }
+            if (event.key === "ArrowDown") {
+                isBraking = true;
+                brakeSound.play(); // Звук тормоза
+            }
+            if (event.key === "Shift") {
+                isAccelerating = true;
+                accelerateSound.play(); // Звук ускорения
+            }
+        });
+
+        document.addEventListener("keyup", (event) => {
+            if (event.key === "ArrowDown") {
+                isBraking = false;
+            }
+            if (event.key === "Shift") {
+                isAccelerating = false;
+            }
+        });
+
+        // Логика торможения
+        Matter.Events.on(engine, "beforeUpdate", function() {
+            if (isBraking) {
+                Body.setVelocity(car, { x: car.velocity.x * 0.98, y: car.velocity.y * 0.98 });
+            }
+
+            if (isAccelerating) {
+                throttle = 0.2; // Увеличиваем скорость при ускорении
+            } else {
+                throttle = 0.1; // Восстанавливаем обычную скорость
+            }
+
+            // Увеличиваем уровень сложности
+            if (score >= level * 10) {
+                level++;
+                throttle += 0.05; // Увеличиваем скорость с каждым уровнем
+            }
+        });
+
+        // Таймер
+        let startTime = Date.now();
+        let score = 0;
+
+        function updateTimer() {
+            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
+            document.getElementById("timer").textContent = "Время: " + elapsedTime;
+            score = elapsedTime;
+            document.getElementById("score").textContent = "Очки: " + score;
+        }
+
+        // Запуск таймера
+        setInterval(updateTimer, 1000);
+
+        // Завершение игры
+        let gameOver = false;
+
+        // Проверка на столкновение с препятствием
+        Matter.Events.on(engine, 'collisionStart', function(event) {
+            const pairs = event.pairs;
+            pairs.forEach(pair => {
+                if ((pair.bodyA === car && pair.bodyB === obstacle1) || (pair.bodyA === car && pair.bodyB === obstacle2)) {
+                    crashSound.play(); // Звук столкновения
+                    gameOver = true;
+                    document.getElementById("gameOver").style.display = "block"; // Показываем сообщение о завершении игры
+                    document.getElementById("score").style.display = "none"; // Прячем очки
+                    document.getElementById("timer").style.display = "none"; // Прячем таймер
+
+                    // Сохраняем новый рекорд
+                    if (score > bestScore) {
+                        bestScore = score;
+                        localStorage.setItem('bestScore', bestScore);
+                        document.getElementById("record").textContent = "Лучший результат: " + bestScore;
+                    }
+                }
+            });
+        });
+
+        // Динамические препятствия
+        const obstacle1 = Bodies.rectangle(400, 400, 100, 20, { isStatic: true });
+        const obstacle2 = Bodies.rectangle(600, 300, 100, 20, { isStatic: true });
+        const movingObstacle = Bodies.rectangle(800, 300, 50, 50, { isStatic: false });
+        Body.setVelocity(movingObstacle, { x: -2, y: 0 });
+
+        // Бонусы для машины
+        const bonus1 = Bodies.circle(500, 200, 15, { isStatic: true });
+        bonus1.render.sprite = { texture: 'https://www.example.com/bonus.png', xScale: 0.1, yScale: 0.1 };
+        World.add(world, [obstacle1, obstacle2, movingObstacle, bonus1]);
+
+        let collectedBonuses = 0;
+
+        // Проверка на сбор бонусов
+        Matter.Events.on(engine, 'collisionStart', function(event) {
+            const pairs = event.pairs;
+            pairs.forEach(pair => {
+                if ((pair.bodyA === car && pair.bodyB === bonus1) || (pair.bodyA === bonus1 && pair.bodyB === car)) {
+                    powerUpSound.play(); // Звук получения бонуса
+                    World.remove(world, bonus1); // Удаляем бонус
+                    collectedBonuses++;
+                    document.getElementById("bonus").textContent = "Бонусов собрано: " + collectedBonuses;
+                    // Можно добавить логику улучшения машины или других бонусов
+                }
+            });
+        });
+
+        // Запуск игры
+        Engine.run(engine);
+        Render.run(render);
+
+        // Сброс игры
+        if (gameOver) {
+            setTimeout(() => {
+                location.reload(); // Перезагружаем игру
+            }, 3000); // Через 3 секунды перезагружается
+        }
+
+    </script>
 </body>
 </html>
