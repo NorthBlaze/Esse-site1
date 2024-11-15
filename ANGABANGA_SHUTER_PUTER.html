@@ -41,7 +41,7 @@
         let render;
         let car;
         let obstacles = [];
-        let bonuses = []; // массив для бонусных очков
+        let bonuses = [];
         let gameOver = false;
         let startTime;
         let score = 0;
@@ -70,7 +70,7 @@
 
             for (let i = 0; i < 5; i++) {
                 createObstacle();
-                createBonus(); // создаем бонусные очки
+                createBonus(); 
             }
 
             Engine.run(engine);
@@ -119,7 +119,7 @@
         function createBonus() {
             const x = Math.random() * (window.innerWidth - 50) + 25;
             const y = Math.random() * -window.innerHeight;
-            const bonus = Bodies.circle(x, y, 10, { isStatic: true, render: { fillStyle: 'yellow' } });
+            const bonus = Bodies.circle(x, y, 10, { isStatic: true, label: 'bonus', render: { fillStyle: 'yellow' } });
             bonuses.push(bonus);
             World.add(engine.world, bonus);
         }
@@ -151,7 +151,6 @@
             document.getElementById("timer").textContent = "Время: " + elapsedTime;
             document.getElementById("score").textContent = "Очки: " + points;
             score = elapsedTime;
-            points = elapsedTime;
 
             Events.on(engine, 'collisionStart', function(event) {
                 event.pairs.forEach(pair => {
@@ -161,9 +160,9 @@
                             endGame("Вы столкнулись! Игра окончена.");
                         }
                     }
-                    if (bonuses.includes(pair.bodyA) || bonuses.includes(pair.bodyB)) {
-                        points += 5; // добавляем 5 очков за каждый собранный бонус
-                        const bonus = pair.bodyA === car ? pair.bodyB : pair.bodyA;
+                    if (pair.bodyA.label === 'bonus' || pair.bodyB.label === 'bonus') {
+                        points += 5;
+                        const bonus = pair.bodyA.label === 'bonus' ? pair.bodyA : pair.bodyB;
                         World.remove(engine.world, bonus);
                         bonuses = bonuses.filter(b => b !== bonus);
                         createBonus();
@@ -209,7 +208,7 @@
                 alert("Супер-ускорение активировано!");
             } else if (upgrade === 'magnet' && points >= 15) {
                 points -= 15;
-                alert("Магнит для очков активирован!"); // Можно добавить логику магнита
+                alert("Магнит для очков активирован!"); 
             } else {
                 alert("Недостаточно очков для покупки!");
             }
