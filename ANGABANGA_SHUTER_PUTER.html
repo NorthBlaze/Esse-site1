@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Гоночная игра - отладка</title>
+    <title>Гоночная игра - отладка управления</title>
     <style>
         body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
         canvas { display: block; width: 100vw; height: 100vh; background-color: #222; }
@@ -19,7 +19,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
-        const { Engine, Render, World, Bodies, Body } = Matter;
+        const { Engine, Render, World, Bodies, Body, Events } = Matter;
 
         const engine = Engine.create();
         const world = engine.world;
@@ -32,7 +32,7 @@
                 width: window.innerWidth,
                 height: window.innerHeight,
                 background: '#222',
-                wireframes: true // Используем wireframes для упрощенной визуализации
+                wireframes: true // wireframes для отладки
             }
         });
 
@@ -41,32 +41,61 @@
             render.canvas.height = window.innerHeight;
         });
 
-        // Создаем машину (без текстуры)
+        // Создаем машину
         const car = Bodies.rectangle(100, window.innerHeight - 100, 80, 40, { density: 0.001 });
         World.add(world, car);
-        console.log("Car added:", car);
 
         // Создаем землю
         const ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 10, window.innerWidth, 60, { isStatic: true });
         World.add(world, ground);
-        console.log("Ground added:", ground);
 
         // Создаем препятствия
         const obstacle1 = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 200, 100, 20, { isStatic: true });
         const obstacle2 = Bodies.rectangle(window.innerWidth / 1.5, window.innerHeight - 300, 100, 20, { isStatic: true });
         World.add(world, [obstacle1, obstacle2]);
-        console.log("Obstacles added:", obstacle1, obstacle2);
 
-        // Создаем движущееся препятствие
+        // Движущееся препятствие
         const movingObstacle = Bodies.rectangle(window.innerWidth, window.innerHeight - 400, 50, 50, { isStatic: false });
         Body.setVelocity(movingObstacle, { x: -2, y: 0 });
         World.add(world, movingObstacle);
-        console.log("Moving obstacle added:", movingObstacle);
 
-        // Создаем бонус (без текстуры)
-        const bonus1 = Bodies.circle(window.innerWidth / 1.3, window.innerHeight - 500, 15, { isStatic: true });
-        World.add(world, bonus1);
-        console.log("Bonus added:", bonus1);
+        // Управление машиной
+        let isAccelerating = false;
+        let isReversing = false;
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "ArrowRight") {
+                isAccelerating = true;
+            }
+            if (event.key === "ArrowLeft") {
+                isReversing = true;
+            }
+        });
+
+        document.addEventListener("keyup", (event) => {
+            if (event.key === "ArrowRight") {
+                isAccelerating = false;
+            }
+            if (event.key === "ArrowLeft") {
+                isReversing = false;
+            }
+        });
+
+        // Логика движения
+        Matter.Events.on(engine, "beforeUpdate", function() {
+            if (isAccelerating) {
+                Body.applyForce(car, car.position, { x: 0.005, y: 0 });
+            }
+            if (isReversing) {
+                Body.applyForce(car, car.position, { x: -0.005, y: 0 });
+            }
+
+            // Логика возврата движущегося препятствия
+            if (movingObstacle.position.x < 0) {
+                Body.setPosition(movingObstacle, { x: window.innerWidth, y: window.innerHeight - 400 });
+                Body.setVelocity(movingObstacle, { x: -2, y: 0 });
+            }
+        });
 
         Engine.run(engine);
         Render.run(render);
