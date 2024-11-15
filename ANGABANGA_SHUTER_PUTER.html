@@ -34,6 +34,7 @@
         let gameOver = false;
         let startTime;
         let score = 0;
+        const movementSpeed = 1.5;  // Фиксированная скорость для машины и препятствий
 
         function init() {
             engine = Engine.create();
@@ -77,10 +78,10 @@
             document.addEventListener("keydown", (event) => {
                 if (gameOver) return;
                 if (event.key === "ArrowLeft") {
-                    Body.applyForce(car, car.position, { x: -0.005, y: 0 });
+                    Body.applyForce(car, car.position, { x: -0.004, y: 0 });
                 }
                 if (event.key === "ArrowRight") {
-                    Body.applyForce(car, car.position, { x: 0.005, y: 0 });
+                    Body.applyForce(car, car.position, { x: 0.004, y: 0 });
                 }
             });
         }
@@ -96,13 +97,12 @@
         function updateGame() {
             if (gameOver) return;
 
-            // Пониженная скорость движения машины вперед
-            Body.setVelocity(car, { x: car.velocity.x, y: -2 });
+            // Пониженная и равномерная скорость движения машины и препятствий
+            Body.setVelocity(car, { x: car.velocity.x, y: -movementSpeed });
 
             // Следование камеры за машиной
             render.bounds.min.y = car.position.y - window.innerHeight / 2;
             render.bounds.max.y = car.position.y + window.innerHeight / 2;
-            render.options.height = window.innerHeight;
 
             // Обновление позиций препятствий и создание новых
             obstacles.forEach(obstacle => {
@@ -111,7 +111,7 @@
                     obstacles = obstacles.filter(o => o !== obstacle);
                     createObstacle();
                 } else {
-                    Body.setPosition(obstacle, { x: obstacle.position.x, y: obstacle.position.y + 2 });
+                    Body.setPosition(obstacle, { x: obstacle.position.x, y: obstacle.position.y + movementSpeed });
                 }
             });
 
