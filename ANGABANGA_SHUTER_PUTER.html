@@ -35,7 +35,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
-        const { Engine, Render, World, Bodies, Body, Events } = Matter;
+        const { Engine, Render, World, Bodies, Body, Events, Runner } = Matter;
 
         let engine;
         let render;
@@ -62,19 +62,20 @@
                 }
             });
 
-            // Машина, зафиксированная по вертикали
+            // Машина игрока
             car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 100, 50, 100, {
-                isStatic: true, // Фиксируем машину по вертикали, чтобы она не падала вниз
-                label: 'car'
+                label: 'car',
+                friction: 0,
+                restitution: 0
             });
             World.add(engine.world, car);
 
             for (let i = 0; i < 5; i++) {
                 createObstacle();
-                createBonus(); 
+                createBonus();
             }
 
-            Engine.run(engine);
+            Runner.run(engine);
             Render.run(render);
             document.getElementById("shop").style.display = "block";
         }
@@ -97,14 +98,10 @@
             document.addEventListener("keydown", (event) => {
                 if (gameOver) return;
                 if (event.key === "ArrowLeft") {
-                    if (car.position.x > 25) {
-                        Body.translate(car, { x: -10, y: 0 });
-                    }
+                    Body.setPosition(car, { x: car.position.x - 10, y: window.innerHeight - 100 });
                 }
                 if (event.key === "ArrowRight") {
-                    if (car.position.x < window.innerWidth - 25) {
-                        Body.translate(car, { x: 10, y: 0 });
-                    }
+                    Body.setPosition(car, { x: car.position.x + 10, y: window.innerHeight - 100 });
                 }
             });
         }
@@ -156,7 +153,7 @@
             requestAnimationFrame(updateGame);
         }
 
-        // Убедимся, что события на столкновение с бонусами и препятствиями правильно отслеживаются
+        // Событие для проверки столкновений
         Events.on(engine, 'collisionStart', function(event) {
             event.pairs.forEach(pair => {
                 const labels = [pair.bodyA.label, pair.bodyB.label];
