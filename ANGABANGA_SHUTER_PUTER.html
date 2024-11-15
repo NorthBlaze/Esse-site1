@@ -96,17 +96,22 @@
         function updateGame() {
             if (gameOver) return;
 
-            // Автоматическое движение машины вперед
-            Body.setVelocity(car, { x: car.velocity.x, y: -5 });
+            // Пониженная скорость движения машины вперед
+            Body.setVelocity(car, { x: car.velocity.x, y: -2 });
+
+            // Следование камеры за машиной
+            render.bounds.min.y = car.position.y - window.innerHeight / 2;
+            render.bounds.max.y = car.position.y + window.innerHeight / 2;
+            render.options.height = window.innerHeight;
 
             // Обновление позиций препятствий и создание новых
             obstacles.forEach(obstacle => {
-                if (obstacle.position.y > window.innerHeight) {
+                if (obstacle.position.y > car.position.y + window.innerHeight / 2) {
                     World.remove(engine.world, obstacle);
                     obstacles = obstacles.filter(o => o !== obstacle);
                     createObstacle();
                 } else {
-                    Body.setPosition(obstacle, { x: obstacle.position.x, y: obstacle.position.y + 5 });
+                    Body.setPosition(obstacle, { x: obstacle.position.x, y: obstacle.position.y + 2 });
                 }
             });
 
