@@ -70,9 +70,9 @@
             // Белый шар
             cueBall = Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
                 label: 'cueBall',
-                restitution: 0.9, // Упругость
-                friction: 0.02, // Трение при движении
-                frictionAir: 0.02, // Замедление в воздухе
+                restitution: 0.9,
+                friction: 0.02,
+                frictionAir: 0.02,
                 render: { fillStyle: 'white' }
             });
             balls.push(cueBall);
@@ -194,8 +194,14 @@
                 pockets.forEach(pocket => {
                     if (Matter.SAT.collides(bodyA, pocket).collided ||
                         Matter.SAT.collides(bodyB, pocket).collided) {
-                        World.remove(engine.world, bodyA);
-                        World.remove(engine.world, bodyB);
+                        if (bodyA === cueBall || bodyB === cueBall) {
+                            // Если белый мяч попадает в лузу, возвращаем его
+                            Body.setPosition(cueBall, { x: tableWidth / 4, y: tableHeight / 2 });
+                            Body.setVelocity(cueBall, { x: 0, y: 0 });
+                        } else {
+                            // Удаляем другие шары
+                            World.remove(engine.world, bodyA.label !== 'cueBall' ? bodyA : bodyB);
+                        }
                     }
                 });
             });
