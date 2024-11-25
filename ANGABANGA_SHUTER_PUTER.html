@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Паркур с бесконечными уровнями</title>
+    <title>Паркур с магазином</title>
     <style>
         body {
             margin: 0;
@@ -16,7 +16,7 @@
             margin: auto;
             background: #87CEEB;
         }
-        #score, #money, #respawnButton {
+        #score, #money, #shop {
             position: absolute;
             font-size: 24px;
             color: #ffffff;
@@ -29,31 +29,47 @@
             top: 40px;
             left: 10px;
         }
-        #respawnButton {
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: none;
-            background: red;
-            padding: 10px 20px;
+        #shop {
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 10px;
             color: white;
+            text-align: center;
+            font-size: 16px;
+        }
+        .shop-item {
+            display: block;
+            margin: 5px 0;
+            padding: 5px 10px;
+            background: green;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            font-size: 20px;
+            color: white;
+            font-size: 14px;
+        }
+        .shop-item.disabled {
+            background: gray;
+            cursor: not-allowed;
         }
     </style>
 </head>
 <body>
     <div id="score">Очки: 0</div>
     <div id="money">Монеты: 0</div>
-    <button id="respawnButton">Respawn</button>
+    <div id="shop">
+        <h3>Магазин</h3>
+        <button id="upgradeSpeed" class="shop-item">Скорость (10 монет)</button>
+        <button id="upgradeJump" class="shop-item">Прыжок (15 монет)</button>
+        <button id="extraLife" class="shop-item">Доп. жизнь (20 монет)</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        const respawnButton = document.getElementById("respawnButton");
 
         const WIDTH = 400;
         const HEIGHT = 600;
@@ -80,8 +96,12 @@
         let platforms = [];
         let score = 0;
         let money = 0;
-        let lives = 3; // Количество жизней
         let cameraY = 0;
+
+        // Магазин
+        const upgradeSpeed = document.getElementById("upgradeSpeed");
+        const upgradeJump = document.getElementById("upgradeJump");
+        const extraLife = document.getElementById("extraLife");
 
         // Создание начальной платформы
         function createStartingPlatform() {
@@ -126,14 +146,24 @@
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") player.speedX = 0;
         });
 
-        respawnButton.addEventListener("click", () => {
-            if (lives > 0) {
-                lives--;
-                player.x = WIDTH / 2 - 15;
-                player.y = HEIGHT - 60;
-                player.speedY = 0;
-                cameraY = 0;
-                respawnButton.style.display = "none";
+        // Магазин
+        upgradeSpeed.addEventListener("click", () => {
+            if (money >= 10) {
+                money -= 10;
+                player.speedMultiplier += 0.5;
+            }
+        });
+
+        upgradeJump.addEventListener("click", () => {
+            if (money >= 15) {
+                money -= 15;
+                player.jumpMultiplier += 0.5;
+            }
+        });
+
+        extraLife.addEventListener("click", () => {
+            if (money >= 20) {
+                money -= 20;
             }
         });
 
@@ -186,8 +216,20 @@
             if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
 
             if (player.y - cameraY > HEIGHT) {
-                respawnButton.style.display = "block";
+                newLevel();
             }
+        }
+
+        // Создание нового уровня
+        function newLevel() {
+            platforms = [];
+            score = 0;
+            createStartingPlatform();
+            createPlatforms();
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            player.speedY = 0;
+            cameraY = 0;
         }
 
         function gameLoop() {
@@ -215,4 +257,3 @@
         gameLoop();
     </script>
 </body>
-</html>
