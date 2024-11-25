@@ -3,201 +3,162 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Онлайн Покер</title>
+    <title>Бильярд</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            background-color: green;
-            color: white;
-            text-align: center;
             margin: 0;
-            padding: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background-color: #2a2a2a;
         }
-        #gameArea {
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            height: 80vh;
-        }
-        .player-area, .dealer-area {
-            border: 2px solid white;
-            border-radius: 10px;
-            padding: 20px;
-            width: 30%;
-        }
-        .card {
-            display: inline-block;
-            width: 60px;
-            height: 90px;
-            margin: 5px;
-            background-color: white;
-            color: black;
-            border: 1px solid black;
-            border-radius: 5px;
-            text-align: center;
-            line-height: 90px;
-            font-size: 20px;
-        }
-        #actions {
-            margin-top: 20px;
-        }
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            border-radius: 5px;
-            border: none;
-            background-color: white;
-            color: black;
+        canvas {
+            display: block;
+            margin: auto;
+            background-color: green;
+            border: 10px solid #804000;
+            border-radius: 15px;
         }
     </style>
 </head>
 <body>
-    <h1>Онлайн Покер</h1>
-    <div id="gameArea">
-        <div class="player-area">
-            <h2>Игрок</h2>
-            <div id="playerCards"></div>
-            <h3>Ставка: <span id="playerBet">0</span> монет</h3>
-            <h3>Баланс: <span id="playerBalance">100</span> монет</h3>
-        </div>
-        <div class="dealer-area">
-            <h2>Дилер</h2>
-            <div id="dealerCards"></div>
-            <h3>Ставка: <span id="dealerBet">0</span> монет</h3>
-        </div>
-    </div>
-    <div id="actions">
-        <button onclick="placeBet(10)">Поставить 10 монет</button>
-        <button onclick="placeBet(20)">Поставить 20 монет</button>
-        <button onclick="revealWinner()">Показать победителя</button>
-        <button onclick="restartGame()">Начать заново</button>
-    </div>
+    <canvas id="gameCanvas"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
-        const suits = ['♠', '♥', '♦', '♣'];
-        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-        let deck = [];
-        let playerCards = [];
-        let dealerCards = [];
-        let playerBet = 0;
-        let playerBalance = 100;
-        let dealerBet = 0;
+        const { Engine, Render, World, Bodies, Body, Events } = Matter;
 
-        // Инициализация колоды
-        function createDeck() {
-            deck = [];
-            for (const suit of suits) {
-                for (const value of values) {
-                    deck.push({ suit, value });
-                }
+        const canvas = document.getElementById('gameCanvas');
+        canvas.width = window.innerWidth * 0.8;
+        canvas.height = window.innerHeight * 0.8;
+
+        const engine = Engine.create();
+        const render = Render.create({
+            canvas: canvas,
+            engine: engine,
+            options: {
+                width: canvas.width,
+                height: canvas.height,
+                background: 'green',
+                wireframes: false
             }
-            shuffleDeck();
-        }
+        });
 
-        // Перемешивание колоды
-        function shuffleDeck() {
-            for (let i = deck.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [deck[i], deck[j]] = [deck[j], deck[i]];
+        const tableWidth = canvas.width;
+        const tableHeight = canvas.height;
+
+        const pocketRadius = 20;
+
+        const pockets = [
+            { x: pocketRadius, y: pocketRadius },
+            { x: tableWidth / 2, y: pocketRadius },
+            { x: tableWidth - pocketRadius, y: pocketRadius },
+            { x: pocketRadius, y: tableHeight - pocketRadius },
+            { x: tableWidth / 2, y: tableHeight - pocketRadius },
+            { x: tableWidth - pocketRadius, y: tableHeight - pocketRadius }
+        ];
+
+        const balls = [];
+        const ballRadius = 15;
+
+        function createBalls() {
+            // Белый шар
+            balls.push(Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
+                label: 'cueBall',
+                render: { fillStyle: 'white' }
+            }));
+
+            // Цветные шары
+            for (let i = 0; i < 15; i++) {
+                const x = tableWidth / 1.5 + (i % 5) * (ballRadius * 2 + 5);
+                const y = tableHeight / 2 + (Math.floor(i / 5) - 1) * (ballRadius * 2 + 5);
+                balls.push(Bodies.circle(x, y, ballRadius, {
+                    label: `ball${i + 1}`,
+                    render: { fillStyle: i % 2 === 0 ? 'red' : 'yellow' }
+                }));
             }
         }
 
-        // Раздача карт
-        function dealCards() {
-            playerCards = [deck.pop(), deck.pop()];
-            dealerCards = [deck.pop(), deck.pop()];
-            renderCards();
-        }
+        const walls = [
+            // Бортики стола
+            Bodies.rectangle(tableWidth / 2, -10, tableWidth, 20, { isStatic: true }),
+            Bodies.rectangle(tableWidth / 2, tableHeight + 10, tableWidth, 20, { isStatic: true }),
+            Bodies.rectangle(-10, tableHeight / 2, 20, tableHeight, { isStatic: true }),
+            Bodies.rectangle(tableWidth + 10, tableHeight / 2, 20, tableHeight, { isStatic: true })
+        ];
 
-        // Отображение карт
-        function renderCards() {
-            const playerCardsDiv = document.getElementById('playerCards');
-            const dealerCardsDiv = document.getElementById('dealerCards');
-            playerCardsDiv.innerHTML = '';
-            dealerCardsDiv.innerHTML = '';
-
-            playerCards.forEach(card => {
-                playerCardsDiv.innerHTML += `<div class="card">${card.value}${card.suit}</div>`;
+        function createPockets() {
+            pockets.forEach(pocket => {
+                World.add(engine.world, Bodies.circle(pocket.x, pocket.y, pocketRadius, {
+                    isStatic: true,
+                    isSensor: true,
+                    render: { fillStyle: 'black' }
+                }));
             });
+        }
 
-            dealerCards.forEach(card => {
-                dealerCardsDiv.innerHTML += `<div class="card">${card.value}${card.suit}</div>`;
+        let cueStick = null;
+        let cueStickAngle = 0;
+        let cueStickPower = 0;
+
+        function createCueStick() {
+            cueStick = Bodies.rectangle(tableWidth / 4, tableHeight / 2, 150, 10, {
+                isStatic: true,
+                render: { fillStyle: 'brown' }
             });
-
-            document.getElementById('playerBet').textContent = playerBet;
-            document.getElementById('playerBalance').textContent = playerBalance;
-            document.getElementById('dealerBet').textContent = dealerBet;
+            World.add(engine.world, cueStick);
         }
 
-        // Делать ставку
-        function placeBet(amount) {
-            if (playerBalance >= amount) {
-                playerBet += amount;
-                playerBalance -= amount;
-                dealerBet += amount;
-                renderCards();
-            } else {
-                alert("Недостаточно средств!");
+        document.addEventListener('mousemove', (event) => {
+            const cueBall = balls.find(ball => ball.label === 'cueBall');
+            if (cueBall) {
+                const dx = event.clientX - cueBall.position.x;
+                const dy = event.clientY - cueBall.position.y;
+                cueStickAngle = Math.atan2(dy, dx);
+                Body.setAngle(cueStick, cueStickAngle);
+                Body.setPosition(cueStick, {
+                    x: cueBall.position.x - Math.cos(cueStickAngle) * 75,
+                    y: cueBall.position.y - Math.sin(cueStickAngle) * 75
+                });
             }
-        }
+        });
 
-        // Определение победителя
-        function revealWinner() {
-            const playerScore = calculateScore(playerCards);
-            const dealerScore = calculateScore(dealerCards);
+        document.addEventListener('mousedown', () => {
+            cueStickPower = 10; // Сила удара
+        });
 
-            if (playerScore > dealerScore) {
-                alert("Вы победили!");
-                playerBalance += playerBet + dealerBet;
-            } else if (playerScore < dealerScore) {
-                alert("Дилер победил!");
-            } else {
-                alert("Ничья!");
-                playerBalance += playerBet; // Возврат ставки игроку
+        document.addEventListener('mouseup', () => {
+            const cueBall = balls.find(ball => ball.label === 'cueBall');
+            if (cueBall) {
+                const forceX = Math.cos(cueStickAngle) * cueStickPower;
+                const forceY = Math.sin(cueStickAngle) * cueStickPower;
+                Body.applyForce(cueBall, cueBall.position, { x: forceX, y: forceY });
             }
+            cueStickPower = 0;
+        });
 
-            playerBet = 0;
-            dealerBet = 0;
-            renderCards();
-        }
+        createBalls();
+        createCueStick();
+        createPockets();
+        World.add(engine.world, [...balls, ...walls]);
 
-        // Подсчет очков
-        function calculateScore(cards) {
-            let score = 0;
-            let aceCount = 0;
+        Events.on(engine, 'collisionStart', (event) => {
+            event.pairs.forEach(pair => {
+                const { bodyA, bodyB } = pair;
+                const cueBall = balls.find(ball => ball.label === 'cueBall');
 
-            cards.forEach(card => {
-                if (['J', 'Q', 'K'].includes(card.value)) {
-                    score += 10;
-                } else if (card.value === 'A') {
-                    score += 11;
-                    aceCount++;
-                } else {
-                    score += parseInt(card.value);
-                }
+                // Проверяем попадание в лузы
+                pockets.forEach(pocket => {
+                    if (Matter.SAT.collides(bodyA, pocket).collided ||
+                        Matter.SAT.collides(bodyB, pocket).collided) {
+                        World.remove(engine.world, bodyA);
+                        World.remove(engine.world, bodyB);
+                    }
+                });
             });
+        });
 
-            while (score > 21 && aceCount > 0) {
-                score -= 10;
-                aceCount--;
-            }
-
-            return score;
-        }
-
-        // Начать игру заново
-        function restartGame() {
-            playerBet = 0;
-            dealerBet = 0;
-            playerBalance = 100;
-            createDeck();
-            dealCards();
-        }
-
-        // Инициализация игры
-        createDeck();
-        dealCards();
+        Render.run(render);
+        Engine.run(engine);
     </script>
 </body>
 </html>
