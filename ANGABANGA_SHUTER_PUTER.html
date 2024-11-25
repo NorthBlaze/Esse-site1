@@ -61,9 +61,9 @@
     <div id="money">Монеты: 0</div>
     <div id="shop">
         <h3>Магазин</h3>
-        <button id="upgradeSpeed" class="shop-item">Скорость (10 монет)</button>
-        <button id="upgradeJump" class="shop-item">Прыжок (15 монет)</button>
-        <button id="extraLife" class="shop-item">Доп. жизнь (20 монет)</button>
+        <button id="upgradeSpeed" class="shop-item">Скорость (50 монет)</button>
+        <button id="upgradeJump" class="shop-item">Прыжок (75 монет)</button>
+        <button id="extraLife" class="shop-item">Доп. жизнь (100 монет)</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -148,22 +148,22 @@
 
         // Магазин
         upgradeSpeed.addEventListener("click", () => {
-            if (money >= 10) {
-                money -= 10;
+            if (money >= 50) {
+                money -= 50;
                 player.speedMultiplier += 0.5;
             }
         });
 
         upgradeJump.addEventListener("click", () => {
-            if (money >= 15) {
-                money -= 15;
+            if (money >= 75) {
+                money -= 75;
                 player.jumpMultiplier += 0.5;
             }
         });
 
         extraLife.addEventListener("click", () => {
-            if (money >= 20) {
-                money -= 20;
+            if (money >= 100) {
+                money -= 100;
             }
         });
 
@@ -224,6 +224,8 @@
         function newLevel() {
             platforms = [];
             score = 0;
+            player.speedMultiplier = 1;
+            player.jumpMultiplier = 1;
             createStartingPlatform();
             createPlatforms();
             player.x = WIDTH / 2 - 15;
@@ -257,3 +259,4 @@
         gameLoop();
     </script>
 </body>
+</html>
