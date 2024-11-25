@@ -3,173 +3,201 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Вертикальная гоночная игра с экономикой</title>
+    <title>Онлайн Покер</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
-        canvas { display: block; width: 100vw; height: 100vh; background-color: #222; }
-        #score { position: absolute; top: 10px; left: 10px; color: white; font-size: 24px; }
-        #timer { position: absolute; top: 10px; right: 10px; color: white; font-size: 24px; }
-        #gameOver { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: red; font-size: 48px; font-weight: bold; display: none; }
-        #shop { position: absolute; bottom: 10px; left: 10px; color: white; font-size: 20px; background-color: rgba(0, 0, 0, 0.7); padding: 10px; display: none; }
-        #startScreen { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 36px; text-align: center; }
-        #startButton, .shop-item { font-size: 18px; padding: 10px 20px; cursor: pointer; margin-top: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            background-color: green;
+            color: white;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        #gameArea {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 80vh;
+        }
+        .player-area, .dealer-area {
+            border: 2px solid white;
+            border-radius: 10px;
+            padding: 20px;
+            width: 30%;
+        }
+        .card {
+            display: inline-block;
+            width: 60px;
+            height: 90px;
+            margin: 5px;
+            background-color: white;
+            color: black;
+            border: 1px solid black;
+            border-radius: 5px;
+            text-align: center;
+            line-height: 90px;
+            font-size: 20px;
+        }
+        #actions {
+            margin-top: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: white;
+            color: black;
+        }
     </style>
 </head>
 <body>
-    <div id="startScreen">
-        <p>Добро пожаловать в гоночную игру!</p>
-        <button id="startButton" onclick="startGame()">Начать игру</button>
+    <h1>Онлайн Покер</h1>
+    <div id="gameArea">
+        <div class="player-area">
+            <h2>Игрок</h2>
+            <div id="playerCards"></div>
+            <h3>Ставка: <span id="playerBet">0</span> монет</h3>
+            <h3>Баланс: <span id="playerBalance">100</span> монет</h3>
+        </div>
+        <div class="dealer-area">
+            <h2>Дилер</h2>
+            <div id="dealerCards"></div>
+            <h3>Ставка: <span id="dealerBet">0</span> монет</h3>
+        </div>
     </div>
-    <div id="score">Очки: 0</div>
-    <div id="timer">Время: 0</div>
-    <div id="gameOver">Игра окончена!</div>
-    <div id="shop">
-        <h3>Магазин</h3>
-        <button class="shop-item" onclick="buyUpgrade('speed')">Увеличить скорость (10 очков)</button><br>
-        <button class="shop-item" onclick="buyUpgrade('size')">Уменьшить размер (15 очков)</button><br>
-        <button class="shop-item" onclick="buyUpgrade('shield')">Щит (20 очков)</button>
+    <div id="actions">
+        <button onclick="placeBet(10)">Поставить 10 монет</button>
+        <button onclick="placeBet(20)">Поставить 20 монет</button>
+        <button onclick="revealWinner()">Показать победителя</button>
+        <button onclick="restartGame()">Начать заново</button>
     </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
-        const { Engine, Render, World, Bodies, Body, Events } = Matter;
+        const suits = ['♠', '♥', '♦', '♣'];
+        const values = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+        let deck = [];
+        let playerCards = [];
+        let dealerCards = [];
+        let playerBet = 0;
+        let playerBalance = 100;
+        let dealerBet = 0;
 
-        let engine, render, car, obstacles = [];
-        let gameOver = false;
-        let startTime, score = 0, points = 0;
-        const movementSpeed = 2;
-        let shieldActive = false;
-
-        function init() {
-            engine = Engine.create();
-            render = Render.create({
-                element: document.body,
-                engine: engine,
-                options: {
-                    width: window.innerWidth,
-                    height: window.innerHeight,
-                    background: '#222',
-                    wireframes: false
+        // Инициализация колоды
+        function createDeck() {
+            deck = [];
+            for (const suit of suits) {
+                for (const value of values) {
+                    deck.push({ suit, value });
                 }
-            });
-
-            car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 150, 50, 100, {
-                label: "car",
-                density: 0.001
-            });
-            World.add(engine.world, car);
-
-            for (let i = 0; i < 5; i++) {
-                createObstacle();
             }
-
-            Engine.run(engine);
-            Render.run(render);
-
-            document.getElementById("shop").style.display = "block";
+            shuffleDeck();
         }
 
-        function startGame() {
-            document.getElementById("startScreen").style.display = "none";
-            document.getElementById("score").style.display = "block";
-            document.getElementById("timer").style.display = "block";
-            gameOver = false;
-            startTime = Date.now();
-            score = 0;
-            points = 0;
-            shieldActive = false;
-            init();
-            addControls();
-            updateGame();
+        // Перемешивание колоды
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
         }
 
-        function addControls() {
-            document.addEventListener("keydown", (event) => {
-                if (gameOver) return;
-                if (event.key === "ArrowLeft" && car.position.x > 25) {
-                    Body.translate(car, { x: -15, y: 0 });
-                }
-                if (event.key === "ArrowRight" && car.position.x < window.innerWidth - 25) {
-                    Body.translate(car, { x: 15, y: 0 });
-                }
-            });
+        // Раздача карт
+        function dealCards() {
+            playerCards = [deck.pop(), deck.pop()];
+            dealerCards = [deck.pop(), deck.pop()];
+            renderCards();
         }
 
-        function createObstacle() {
-            const x = Math.random() * (window.innerWidth - 50) + 25;
-            const y = Math.random() * -window.innerHeight;
-            const obstacle = Bodies.rectangle(x, y, 80, 20, {
-                label: "obstacle",
-                isStatic: false
-            });
-            obstacles.push(obstacle);
-            World.add(engine.world, obstacle);
-        }
+        // Отображение карт
+        function renderCards() {
+            const playerCardsDiv = document.getElementById('playerCards');
+            const dealerCardsDiv = document.getElementById('dealerCards');
+            playerCardsDiv.innerHTML = '';
+            dealerCardsDiv.innerHTML = '';
 
-        function updateGame() {
-            if (gameOver) return;
-
-            obstacles.forEach(obstacle => {
-                Body.setPosition(obstacle, { x: obstacle.position.x, y: obstacle.position.y + movementSpeed });
-
-                if (obstacle.position.y > window.innerHeight) {
-                    World.remove(engine.world, obstacle);
-                    obstacles = obstacles.filter(o => o !== obstacle);
-                    createObstacle();
-                }
+            playerCards.forEach(card => {
+                playerCardsDiv.innerHTML += `<div class="card">${card.value}${card.suit}</div>`;
             });
 
-            const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
-            document.getElementById("timer").textContent = "Время: " + elapsedTime;
-            score = elapsedTime;
-            points = elapsedTime;
-            document.getElementById("score").textContent = "Очки: " + points;
-
-            Events.on(engine, 'collisionStart', function(event) {
-                event.pairs.forEach(pair => {
-                    const labels = [pair.bodyA.label, pair.bodyB.label];
-                    if (labels.includes("car") && labels.includes("obstacle")) {
-                        if (shieldActive) {
-                            shieldActive = false;
-                            World.remove(engine.world, labels.includes("obstacle") ? pair.bodyA : pair.bodyB);
-                        } else {
-                            endGame("Вы столкнулись! Игра окончена.");
-                        }
-                    }
-                });
+            dealerCards.forEach(card => {
+                dealerCardsDiv.innerHTML += `<div class="card">${card.value}${card.suit}</div>`;
             });
 
-            requestAnimationFrame(updateGame);
+            document.getElementById('playerBet').textContent = playerBet;
+            document.getElementById('playerBalance').textContent = playerBalance;
+            document.getElementById('dealerBet').textContent = dealerBet;
         }
 
-        function endGame(message) {
-            gameOver = true;
-            document.getElementById("gameOver").textContent = message;
-            document.getElementById("gameOver").style.display = "block";
-            Engine.clear(engine);
-        }
-
-        function buyUpgrade(upgrade) {
-            if (gameOver) return;
-
-            if (upgrade === 'speed' && points >= 10) {
-                points -= 10;
-                Body.setVelocity(car, { x: 0, y: -3 });
-                alert("Скорость увеличена!");
-            } else if (upgrade === 'size' && points >= 15) {
-                points -= 15;
-                Body.scale(car, 0.8, 0.8);
-                alert("Размер уменьшен!");
-            } else if (upgrade === 'shield' && points >= 20) {
-                points -= 20;
-                shieldActive = true;
-                alert("Щит активирован!");
+        // Делать ставку
+        function placeBet(amount) {
+            if (playerBalance >= amount) {
+                playerBet += amount;
+                playerBalance -= amount;
+                dealerBet += amount;
+                renderCards();
             } else {
-                alert("Недостаточно очков для покупки!");
+                alert("Недостаточно средств!");
+            }
+        }
+
+        // Определение победителя
+        function revealWinner() {
+            const playerScore = calculateScore(playerCards);
+            const dealerScore = calculateScore(dealerCards);
+
+            if (playerScore > dealerScore) {
+                alert("Вы победили!");
+                playerBalance += playerBet + dealerBet;
+            } else if (playerScore < dealerScore) {
+                alert("Дилер победил!");
+            } else {
+                alert("Ничья!");
+                playerBalance += playerBet; // Возврат ставки игроку
             }
 
-            document.getElementById("score").textContent = "Очки: " + points;
+            playerBet = 0;
+            dealerBet = 0;
+            renderCards();
         }
+
+        // Подсчет очков
+        function calculateScore(cards) {
+            let score = 0;
+            let aceCount = 0;
+
+            cards.forEach(card => {
+                if (['J', 'Q', 'K'].includes(card.value)) {
+                    score += 10;
+                } else if (card.value === 'A') {
+                    score += 11;
+                    aceCount++;
+                } else {
+                    score += parseInt(card.value);
+                }
+            });
+
+            while (score > 21 && aceCount > 0) {
+                score -= 10;
+                aceCount--;
+            }
+
+            return score;
+        }
+
+        // Начать игру заново
+        function restartGame() {
+            playerBet = 0;
+            dealerBet = 0;
+            playerBalance = 100;
+            createDeck();
+            dealCards();
+        }
+
+        // Инициализация игры
+        createDeck();
+        dealCards();
     </script>
 </body>
 </html>
