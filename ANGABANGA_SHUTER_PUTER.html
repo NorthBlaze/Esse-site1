@@ -70,7 +70,9 @@
             // Белый шар
             cueBall = Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
                 label: 'cueBall',
-                restitution: 0.9,
+                restitution: 0.9, // Упругость
+                friction: 0.02, // Трение при движении
+                frictionAir: 0.02, // Замедление в воздухе
                 render: { fillStyle: 'white' }
             });
             balls.push(cueBall);
@@ -82,6 +84,8 @@
                 balls.push(Bodies.circle(x, y, ballRadius, {
                     label: `ball${i + 1}`,
                     restitution: 0.9,
+                    friction: 0.02,
+                    frictionAir: 0.02,
                     render: { fillStyle: i % 2 === 0 ? 'red' : 'yellow' }
                 }));
             }
@@ -157,9 +161,14 @@
                 const dx = dragStart.x - mouseX;
                 const dy = dragStart.y - mouseY;
 
+                // Ограничиваем силу удара
+                const maxForce = 0.03;
+                const forceX = Math.max(Math.min(dx * 0.002, maxForce), -maxForce);
+                const forceY = Math.max(Math.min(dy * 0.002, maxForce), -maxForce);
+
                 Body.applyForce(cueBall, cueBall.position, {
-                    x: dx * 0.005,
-                    y: dy * 0.005
+                    x: forceX,
+                    y: forceY
                 });
 
                 isDragging = false;
