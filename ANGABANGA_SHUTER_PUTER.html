@@ -18,33 +18,36 @@
         }
         #score, #money, #shop {
             position: absolute;
-            top: 10px;
-            left: 10px;
             font-size: 24px;
             color: #ffffff;
         }
+        #score {
+            top: 10px;
+            left: 10px;
+        }
         #money {
             top: 40px;
+            left: 10px;
         }
         #shop {
-            top: 80px;
+            top: 50%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translate(-50%, -50%);
             display: none;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.8);
             padding: 20px;
             border-radius: 10px;
+            color: white;
+            text-align: center;
         }
         .shop-item {
-            display: block;
             margin: 10px 0;
             padding: 10px;
             background: green;
-            color: white;
-            text-align: center;
             border: none;
             border-radius: 5px;
             cursor: pointer;
+            color: white;
         }
         .shop-item.disabled {
             background: gray;
@@ -56,11 +59,11 @@
     <div id="score">Очки: 0</div>
     <div id="money">Монеты: 0</div>
     <div id="shop">
-        <h3>Магазин улучшений</h3>
-        <button class="shop-item" id="upgradeSpeed">Больше скорости (10 монет)</button>
-        <button class="shop-item" id="upgradeJump">Выше прыжок (15 монет)</button>
-        <button class="shop-item" id="extraLife">Дополнительная жизнь (20 монет)</button>
-        <button class="shop-item" id="closeShop">Закрыть магазин</button>
+        <h2>Магазин</h2>
+        <button id="upgradeSpeed" class="shop-item">Увеличение скорости (10 монет)</button>
+        <button id="upgradeJump" class="shop-item">Увеличение прыжка (15 монет)</button>
+        <button id="extraLife" class="shop-item">Дополнительная жизнь (20 монет)</button>
+        <button id="closeShop" class="shop-item">Закрыть</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -73,6 +76,7 @@
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
 
+        // Игрок
         const player = {
             x: WIDTH / 2 - 15,
             y: HEIGHT - 60,
@@ -83,37 +87,30 @@
             speedY: 0,
             gravity: 0.5,
             jumpPower: -10,
-            isOnGround: false,
             speedMultiplier: 1,
-            jumpMultiplier: 1
+            jumpMultiplier: 1,
+            isOnGround: false,
         };
 
+        // Игровые переменные
         let platforms = [];
-        let cameraY = 0;
         let score = 0;
         let money = 0;
         let lives = 1;
+        let cameraY = 0;
 
+        // Магазин
         const shop = document.getElementById("shop");
         const upgradeSpeed = document.getElementById("upgradeSpeed");
         const upgradeJump = document.getElementById("upgradeJump");
         const extraLife = document.getElementById("extraLife");
+        const closeShop = document.getElementById("closeShop");
 
-        function createStartingPlatform() {
-            platforms.push({
-                x: WIDTH / 2 - 50,
-                y: HEIGHT - 30,
-                width: 100,
-                height: 10,
-                color: "green",
-                dx: 0
-            });
-        }
-
+        // Создание платформ
         function createPlatforms() {
-            const gap = 100; 
-            for (let i = 1; i < 10; i++) {
-                const width = Math.random() * 40 + 60;
+            const gap = 100;
+            for (let i = 0; i < 10; i++) {
+                const width = Math.random() * 50 + 50;
                 const x = Math.random() * (WIDTH - width);
                 const y = HEIGHT - i * gap;
                 platforms.push({ x, y, width, height: 10, color: "green", dx: 0 });
@@ -121,7 +118,7 @@
         }
 
         function addPlatform() {
-            const width = Math.random() * 40 + 60;
+            const width = Math.random() * 50 + 50;
             const x = Math.random() * (WIDTH - width);
             const y = platforms[platforms.length - 1].y - 100;
             const moving = Math.random() > 0.7;
@@ -129,94 +126,19 @@
             platforms.push({ x, y, width, height: 10, color: "green", dx });
         }
 
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
-        }
-
-        function drawPlatforms() {
-            platforms.forEach(platform => {
-                ctx.fillStyle = platform.color;
-                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
-            });
-        }
-
-        function updatePlatforms() {
-            platforms.forEach(platform => {
-                platform.x += platform.dx;
-
-                if (platform.x < 0 || platform.x + platform.width > WIDTH) {
-                    platform.dx *= -1;
-                }
-            });
-
-            platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
-        }
-
-        function updatePlayer() {
-            player.x += player.speedX;
-            player.y += player.speedY;
-
-            player.speedY += player.gravity;
-
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
-
-            player.isOnGround = false;
-            platforms.forEach(platform => {
-                if (
-                    player.y + player.height >= platform.y &&
-                    player.y + player.height <= platform.y + platform.height &&
-                    player.x + player.width > platform.x &&
-                    player.x < platform.x + platform.width &&
-                    player.speedY >= 0
-                ) {
-                    player.speedY = 0;
-                    player.y = platform.y - player.height;
-                    player.isOnGround = true;
-
-                    if (platform.color === "green") {
-                        score++;
-                        money += 2; 
-                        platform.color = "gray"; 
-                        if (score % 10 === 0) addPlatform();
-                    }
-                }
-            });
-
-            if (player.y - cameraY < HEIGHT / 3) {
-                cameraY = player.y - HEIGHT / 3;
-            }
-
-            if (player.y - cameraY > HEIGHT) {
-                if (lives > 0) {
-                    lives--;
-                    player.y = platforms[platforms.length - 1].y - 20;
-                    player.speedY = 0;
-                } else {
-                    resetGame();
-                }
-            }
-        }
-
+        // Управление
         document.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowLeft") {
-                player.speedX = -5 * player.speedMultiplier;
-            } else if (e.key === "ArrowRight") {
-                player.speedX = 5 * player.speedMultiplier;
-            } else if (e.key === " " && player.isOnGround) {
-                player.speedY = player.jumpPower * player.jumpMultiplier;
-            } else if (e.key === "m" || e.key === "M") {
-                shop.style.display = shop.style.display === "block" ? "none" : "block";
-            }
+            if (e.key === "ArrowLeft") player.speedX = -5 * player.speedMultiplier;
+            if (e.key === "ArrowRight") player.speedX = 5 * player.speedMultiplier;
+            if (e.key === " " && player.isOnGround) player.speedY = player.jumpPower * player.jumpMultiplier;
+            if (e.key.toLowerCase() === "m") shop.style.display = shop.style.display === "block" ? "none" : "block";
         });
 
         document.addEventListener("keyup", (e) => {
-            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-                player.speedX = 0;
-            }
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") player.speedX = 0;
         });
 
+        // Магазин
         upgradeSpeed.addEventListener("click", () => {
             if (money >= 10) {
                 money -= 10;
@@ -238,48 +160,83 @@
             }
         });
 
-        document.getElementById("closeShop").addEventListener("click", () => {
+        closeShop.addEventListener("click", () => {
             shop.style.display = "none";
         });
 
-        function resetGame() {
-            player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 60;
-            player.speedX = 0;
-            player.speedY = 0;
-            cameraY = 0;
-            platforms = [];
-            score = 0;
-            money = 0;
-            lives = 1;
-            player.speedMultiplier = 1;
-            player.jumpMultiplier = 1;
-            createStartingPlatform();
-                        createPlatforms();
+        // Обновление платформ
+        function updatePlatforms() {
+            platforms.forEach(platform => {
+                platform.x += platform.dx;
+
+                if (platform.x < 0 || platform.x + platform.width > WIDTH) platform.dx *= -1;
+            });
+
+            platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
         }
 
-        // Основной игровой цикл
+        // Обновление игрока
+        function updatePlayer() {
+            player.x += player.speedX;
+            player.y += player.speedY;
+            player.speedY += player.gravity;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
+
+            player.isOnGround = false;
+            platforms.forEach(platform => {
+                if (
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.speedY >= 0
+                ) {
+                    player.speedY = 0;
+                    player.y = platform.y - player.height;
+                    player.isOnGround = true;
+
+                    if (platform.color === "green") {
+                        score++;
+                        money += 2;
+                        platform.color = "gray";
+
+                        if (score % 10 === 0) addPlatform();
+                    }
+                }
+            });
+
+            if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
+            if (player.y - cameraY > HEIGHT && lives > 0) {
+                lives--;
+                player.y = platforms[platforms.length - 1].y - 20;
+                player.speedY = 0;
+            }
+        }
+
         function gameLoop() {
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-            // Обновляем и рисуем объекты
-            drawPlatforms();
-            drawPlayer();
             updatePlatforms();
             updatePlayer();
 
-            // Обновляем отображение очков и монет
+            platforms.forEach(platform => {
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
+            });
+
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
+
             document.getElementById("score").textContent = `Очки: ${score}`;
             document.getElementById("money").textContent = `Монеты: ${money}`;
 
             requestAnimationFrame(gameLoop);
         }
 
-        // Инициализация игры
-        createStartingPlatform();
         createPlatforms();
         gameLoop();
     </script>
 </body>
 </html>
-
