@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Паркур с магазином</title>
+    <title>Паркур с респауном</title>
     <style>
         body {
             margin: 0;
@@ -16,7 +16,7 @@
             margin: auto;
             background: #87CEEB;
         }
-        #score, #money, #shop {
+        #score, #money, #respawnButton, #shop {
             position: absolute;
             font-size: 24px;
             color: #ffffff;
@@ -28,6 +28,19 @@
         #money {
             top: 40px;
             left: 10px;
+        }
+        #respawnButton {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            background: red;
+            padding: 10px 20px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 20px;
         }
         #shop {
             top: 50%;
@@ -49,15 +62,12 @@
             cursor: pointer;
             color: white;
         }
-        .shop-item.disabled {
-            background: gray;
-            cursor: not-allowed;
-        }
     </style>
 </head>
 <body>
     <div id="score">Очки: 0</div>
     <div id="money">Монеты: 0</div>
+    <button id="respawnButton">Respawn</button>
     <div id="shop">
         <h2>Магазин</h2>
         <button id="upgradeSpeed" class="shop-item">Увеличение скорости (10 монет)</button>
@@ -70,6 +80,7 @@
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const respawnButton = document.getElementById("respawnButton");
 
         const WIDTH = 400;
         const HEIGHT = 600;
@@ -96,15 +107,8 @@
         let platforms = [];
         let score = 0;
         let money = 0;
-        let lives = 1;
+        let lives = 3; // Количество жизней
         let cameraY = 0;
-
-        // Магазин
-        const shop = document.getElementById("shop");
-        const upgradeSpeed = document.getElementById("upgradeSpeed");
-        const upgradeJump = document.getElementById("upgradeJump");
-        const extraLife = document.getElementById("extraLife");
-        const closeShop = document.getElementById("closeShop");
 
         // Создание начальной платформы
         function createStartingPlatform() {
@@ -143,37 +147,23 @@
             if (e.key === "ArrowLeft") player.speedX = -5 * player.speedMultiplier;
             if (e.key === "ArrowRight") player.speedX = 5 * player.speedMultiplier;
             if (e.key === " " && player.isOnGround) player.speedY = player.jumpPower * player.jumpMultiplier;
-            if (e.key.toLowerCase() === "m") shop.style.display = shop.style.display === "block" ? "none" : "block";
         });
 
         document.addEventListener("keyup", (e) => {
             if (e.key === "ArrowLeft" || e.key === "ArrowRight") player.speedX = 0;
         });
 
-        // Магазин
-        upgradeSpeed.addEventListener("click", () => {
-            if (money >= 10) {
-                money -= 10;
-                player.speedMultiplier += 0.5;
+        respawnButton.addEventListener("click", () => {
+            if (lives > 0) {
+                lives--;
+                player.x = WIDTH / 2 - 15;
+                player.y = HEIGHT - 60;
+                player.speedY = 0;
+                cameraY = 0;
+                respawnButton.style.display = "none";
+            } else {
+                resetGame();
             }
-        });
-
-        upgradeJump.addEventListener("click", () => {
-            if (money >= 15) {
-                money -= 15;
-                player.jumpMultiplier += 0.5;
-            }
-        });
-
-        extraLife.addEventListener("click", () => {
-            if (money >= 20) {
-                money -= 20;
-                lives++;
-            }
-        });
-
-        closeShop.addEventListener("click", () => {
-            shop.style.display = "none";
         });
 
         // Обновление платформ
@@ -220,11 +210,25 @@
             });
 
             if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
-            if (player.y - cameraY > HEIGHT && lives > 0) {
-                lives--;
-                player.y = platforms[platforms.length - 1].y - 20;
-                player.speedY = 0;
+
+            if (player.y - cameraY > HEIGHT) {
+                respawnButton.style.display = "block";
             }
+        }
+
+        function resetGame() {
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            player.speedX = 0;
+            player.speedY = 0;
+            cameraY = 0;
+            platforms = [];
+            score = 0;
+            money = 0;
+            lives = 3;
+            createStartingPlatform();
+            createPlatforms();
+            respawnButton.style.display = "none";
         }
 
         function gameLoop() {
