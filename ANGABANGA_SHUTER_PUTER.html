@@ -32,6 +32,8 @@
         canvas.height = window.innerHeight * 0.8;
 
         const engine = Engine.create();
+        engine.world.gravity.y = 0; // Отключение гравитации
+
         const render = Render.create({
             canvas: canvas,
             engine: engine,
@@ -64,6 +66,7 @@
             // Белый шар
             balls.push(Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
                 label: 'cueBall',
+                restitution: 0.9,
                 render: { fillStyle: 'white' }
             }));
 
@@ -73,6 +76,7 @@
                 const y = tableHeight / 2 + (Math.floor(i / 5) - 1) * (ballRadius * 2 + 5);
                 balls.push(Bodies.circle(x, y, ballRadius, {
                     label: `ball${i + 1}`,
+                    restitution: 0.9,
                     render: { fillStyle: i % 2 === 0 ? 'red' : 'yellow' }
                 }));
             }
