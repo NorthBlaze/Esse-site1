@@ -7,208 +7,207 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
-            font-family: Arial, sans-serif;
             background-color: #2a2a2a;
         }
         canvas {
             display: block;
-            margin: auto;
-            background-color: green;
-            border: 10px solid #804000;
+            margin: 20px auto;
+            background-color: #0a5c23;
+            border: 15px solid #65350f;
             border-radius: 15px;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas"></canvas>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
-        const { Engine, Render, World, Bodies, Body, Events } = Matter;
-
         const canvas = document.getElementById('gameCanvas');
-        canvas.width = window.innerWidth * 0.8;
-        canvas.height = window.innerHeight * 0.8;
+        const ctx = canvas.getContext('2d');
 
-        const engine = Engine.create();
-        engine.world.gravity.y = 0; // Отключаем гравитацию
+        const WIDTH = canvas.width;
+        const HEIGHT = canvas.height;
 
-        const render = Render.create({
-            canvas: canvas,
-            engine: engine,
-            options: {
-                width: canvas.width,
-                height: canvas.height,
-                background: 'green',
-                wireframes: false
-            }
-        });
+        const BALL_RADIUS = 10;
+        const POCKET_RADIUS = 15;
+        const WHITE_BALL_START = { x: WIDTH / 4, y: HEIGHT / 2 };
 
-        const tableWidth = canvas.width;
-        const tableHeight = canvas.height;
-
-        const pocketRadius = 20;
-
-        const pockets = [
-            { x: pocketRadius, y: pocketRadius },
-            { x: tableWidth / 2, y: pocketRadius },
-            { x: tableWidth - pocketRadius, y: pocketRadius },
-            { x: pocketRadius, y: tableHeight - pocketRadius },
-            { x: tableWidth / 2, y: tableHeight - pocketRadius },
-            { x: tableWidth - pocketRadius, y: tableHeight - pocketRadius }
-        ];
-
-        const balls = [];
-        const ballRadius = 15;
-
+        let whiteBall = { x: WHITE_BALL_START.x, y: WHITE_BALL_START.y, dx: 0, dy: 0, color: 'white' };
+        let balls = [];
+        let pockets = [];
         let isDragging = false;
         let dragStart = null;
-        let cueBall = null;
 
+        // Создание цветных шаров
         function createBalls() {
-            // Белый шар
-            cueBall = Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
-                label: 'cueBall',
-                restitution: 0.9,
-                friction: 0.02,
-                frictionAir: 0.02,
-                render: { fillStyle: 'white' }
-            });
-            balls.push(cueBall);
-
-            // Цветные шары
+            balls = [];
             for (let i = 0; i < 15; i++) {
-                const x = tableWidth / 1.5 + (i % 5) * (ballRadius * 2 + 5);
-                const y = tableHeight / 2 + (Math.floor(i / 5) - 1) * (ballRadius * 2 + 5);
-                balls.push(Bodies.circle(x, y, ballRadius, {
-                    label: `ball${i + 1}`,
-                    restitution: 0.9,
-                    friction: 0.02,
-                    frictionAir: 0.02,
-                    render: { fillStyle: i % 2 === 0 ? 'red' : 'yellow' }
-                }));
+                const x = WIDTH / 1.5 + (i % 5) * (BALL_RADIUS * 2 + 5);
+                const y = HEIGHT / 2 + (Math.floor(i / 5) - 1) * (BALL_RADIUS * 2 + 5);
+                balls.push({ x, y, dx: 0, dy: 0, color: i % 2 === 0 ? 'red' : 'yellow' });
             }
         }
 
-        const walls = [
-            // Бортики стола
-            Bodies.rectangle(tableWidth / 2, -10, tableWidth, 20, { isStatic: true }),
-            Bodies.rectangle(tableWidth / 2, tableHeight + 10, tableWidth, 20, { isStatic: true }),
-            Bodies.rectangle(-10, tableHeight / 2, 20, tableHeight, { isStatic: true }),
-            Bodies.rectangle(tableWidth + 10, tableHeight / 2, 20, tableHeight, { isStatic: true })
-        ];
-
+        // Создание лунок
         function createPockets() {
+            pockets = [
+                { x: 0, y: 0 },
+                { x: WIDTH / 2, y: 0 },
+                { x: WIDTH, y: 0 },
+                { x: 0, y: HEIGHT },
+                { x: WIDTH / 2, y: HEIGHT },
+                { x: WIDTH, y: HEIGHT }
+            ];
+        }
+
+        function drawTable() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            // Рисуем лузы
             pockets.forEach(pocket => {
-                World.add(engine.world, Bodies.circle(pocket.x, pocket.y, pocketRadius, {
-                    isStatic: true,
-                    isSensor: true,
-                    render: { fillStyle: 'black' }
-                }));
+                ctx.beginPath();
+                ctx.arc(pocket.x, pocket.y, POCKET_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = 'black';
+                ctx.fill();
+            });
+
+            // Рисуем бортики
+            ctx.fillStyle = '#65350f';
+            ctx.fillRect(0, 0, WIDTH, 5);
+            ctx.fillRect(0, HEIGHT - 5, WIDTH, 5);
+            ctx.fillRect(0, 0, 5, HEIGHT);
+            ctx.fillRect(WIDTH - 5, 0, 5, HEIGHT);
+        }
+
+        function drawBall(ball) {
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, BALL_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawArrow(startX, startY, endX, endY) {
+            const angle = Math.atan2(endY - startY, endX - startX);
+            const arrowLength = 60;
+
+            ctx.beginPath();
+            ctx.moveTo(startX, startY);
+            ctx.lineTo(endX, endY);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Рисуем наконечник стрелки
+            ctx.beginPath();
+            ctx.moveTo(endX, endY);
+            ctx.lineTo(endX - arrowLength * Math.cos(angle - Math.PI / 6), endY - arrowLength * Math.sin(angle - Math.PI / 6));
+            ctx.lineTo(endX - arrowLength * Math.cos(angle + Math.PI / 6), endY - arrowLength * Math.sin(angle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fillStyle = 'white';
+            ctx.fill();
+        }
+
+        function updateBall(ball) {
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            // Трение для замедления мяча
+            ball.dx *= 0.98;
+            ball.dy *= 0.98;
+
+            // Удар об бортики
+            if (ball.x - BALL_RADIUS < 5 || ball.x + BALL_RADIUS > WIDTH - 5) {
+                ball.dx *= -1;
+            }
+            if (ball.y - BALL_RADIUS < 5 || ball.y + BALL_RADIUS > HEIGHT - 5) {
+                ball.dy *= -1;
+            }
+
+            // Проверка на остановку
+            if (Math.abs(ball.dx) < 0.01) ball.dx = 0;
+            if (Math.abs(ball.dy) < 0.01) ball.dy = 0;
+
+            // Проверка на попадание в лузы
+            pockets.forEach(pocket => {
+                const dist = Math.hypot(ball.x - pocket.x, ball.y - pocket.y);
+                if (dist < POCKET_RADIUS) {
+                    if (ball === whiteBall) {
+                        // Если белый шар, возвращаем его на стартовую позицию
+                        whiteBall.x = WHITE_BALL_START.x;
+                        whiteBall.y = WHITE_BALL_START.y;
+                        whiteBall.dx = 0;
+                        whiteBall.dy = 0;
+                    } else {
+                        // Удаляем цветной шар
+                        balls = balls.filter(b => b !== ball);
+                    }
+                }
             });
         }
 
-        canvas.addEventListener('mousedown', (event) => {
+        function gameLoop() {
+            drawTable();
+
+            // Рисуем шары
+            drawBall(whiteBall);
+            balls.forEach(drawBall);
+
+            // Обновляем позиции шаров
+            updateBall(whiteBall);
+            balls.forEach(updateBall);
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - rect.left;
-            const mouseY = event.clientY - rect.top;
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
 
-            const dx = mouseX - cueBall.position.x;
-            const dy = mouseY - cueBall.position.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance <= ballRadius) {
+            const dist = Math.hypot(mouseX - whiteBall.x, mouseY - whiteBall.y);
+            if (dist < BALL_RADIUS) {
                 isDragging = true;
                 dragStart = { x: mouseX, y: mouseY };
             }
         });
 
-        canvas.addEventListener('mousemove', (event) => {
+        canvas.addEventListener('mousemove', (e) => {
             if (isDragging) {
                 const rect = canvas.getBoundingClientRect();
-                const mouseX = event.clientX - rect.left;
-                const mouseY = event.clientY - rect.top;
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
 
-                const dx = dragStart.x - mouseX;
-                const dy = dragStart.y - mouseY;
-                const distance = Math.sqrt(dx * dx + dy * dy);
-
-                const angle = Math.atan2(dy, dx);
+                ctx.clearRect(0, 0, WIDTH, HEIGHT);
+                drawTable();
+                drawBall(whiteBall);
+                balls.forEach(drawBall);
 
                 // Рисуем стрелку траектории
-                const arrowLength = Math.min(distance, 100); // Ограничиваем длину стрелки
-                const arrowEndX = cueBall.position.x + Math.cos(angle) * arrowLength;
-                const arrowEndY = cueBall.position.y + Math.sin(angle) * arrowLength;
-
-                const context = render.context;
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                Render.world(render);
-
-                context.beginPath();
-                context.moveTo(cueBall.position.x, cueBall.position.y);
-                context.lineTo(arrowEndX, arrowEndY);
-                context.strokeStyle = 'white';
-                context.lineWidth = 2;
-                context.stroke();
+                drawArrow(whiteBall.x, whiteBall.y, mouseX, mouseY);
             }
         });
 
-        canvas.addEventListener('mouseup', (event) => {
+        canvas.addEventListener('mouseup', (e) => {
             if (isDragging) {
                 const rect = canvas.getBoundingClientRect();
-                const mouseX = event.clientX - rect.left;
-                const mouseY = event.clientY - rect.top;
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
 
-                const dx = dragStart.x - mouseX;
-                const dy = dragStart.y - mouseY;
+                const dx = (whiteBall.x - mouseX) * 0.1;
+                const dy = (whiteBall.y - mouseY) * 0.1;
 
-                // Ограничиваем силу удара
-                const maxForce = 0.03;
-                const forceX = Math.max(Math.min(dx * 0.002, maxForce), -maxForce);
-                const forceY = Math.max(Math.min(dy * 0.002, maxForce), -maxForce);
-
-                Body.applyForce(cueBall, cueBall.position, {
-                    x: forceX,
-                    y: forceY
-                });
+                whiteBall.dx = dx;
+                whiteBall.dy = dy;
 
                 isDragging = false;
                 dragStart = null;
-
-                const context = render.context;
-                context.clearRect(0, 0, canvas.width, canvas.height);
-                Render.world(render);
             }
         });
 
         createBalls();
         createPockets();
-        World.add(engine.world, [...balls, ...walls]);
-
-        Events.on(engine, 'collisionStart', (event) => {
-            event.pairs.forEach(pair => {
-                const { bodyA, bodyB } = pair;
-
-                // Проверяем попадание в лузы
-                pockets.forEach(pocket => {
-                    if (Matter.SAT.collides(bodyA, pocket).collided ||
-                        Matter.SAT.collides(bodyB, pocket).collided) {
-                        if (bodyA === cueBall || bodyB === cueBall) {
-                            // Если белый мяч попадает в лузу, возвращаем его
-                            Body.setPosition(cueBall, { x: tableWidth / 4, y: tableHeight / 2 });
-                            Body.setVelocity(cueBall, { x: 0, y: 0 });
-                        } else {
-                            // Удаляем другие шары
-                            World.remove(engine.world, bodyA.label !== 'cueBall' ? bodyA : bodyB);
-                        }
-                    }
-                });
-            });
-        });
-
-        Render.run(render);
-        Engine.run(engine);
+        gameLoop();
     </script>
 </body>
 </html>
