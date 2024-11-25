@@ -37,7 +37,7 @@
         let engine, render, car, obstacles = [];
         let gameOver = false;
         let startTime, score = 0, points = 0;
-        const movementSpeed = 1.5;
+        const movementSpeed = 2;
         let shieldActive = false;
 
         function init() {
@@ -53,8 +53,8 @@
                 }
             });
 
-            car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 100, {
-                isStatic: true,
+            car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight - 150, 50, 100, {
+                label: "car",
                 density: 0.001
             });
             World.add(engine.world, car);
@@ -87,10 +87,10 @@
             document.addEventListener("keydown", (event) => {
                 if (gameOver) return;
                 if (event.key === "ArrowLeft" && car.position.x > 25) {
-                    Body.translate(car, { x: -10, y: 0 });
+                    Body.translate(car, { x: -15, y: 0 });
                 }
                 if (event.key === "ArrowRight" && car.position.x < window.innerWidth - 25) {
-                    Body.translate(car, { x: 10, y: 0 });
+                    Body.translate(car, { x: 15, y: 0 });
                 }
             });
         }
@@ -98,7 +98,10 @@
         function createObstacle() {
             const x = Math.random() * (window.innerWidth - 50) + 25;
             const y = Math.random() * -window.innerHeight;
-            const obstacle = Bodies.rectangle(x, y, 80, 20, { isStatic: true });
+            const obstacle = Bodies.rectangle(x, y, 80, 20, {
+                label: "obstacle",
+                isStatic: false
+            });
             obstacles.push(obstacle);
             World.add(engine.world, obstacle);
         }
@@ -118,13 +121,17 @@
 
             const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
             document.getElementById("timer").textContent = "Время: " + elapsedTime;
+            score = elapsedTime;
+            points = elapsedTime;
             document.getElementById("score").textContent = "Очки: " + points;
 
             Events.on(engine, 'collisionStart', function(event) {
                 event.pairs.forEach(pair => {
-                    if (obstacles.includes(pair.bodyA) || obstacles.includes(pair.bodyB)) {
+                    const labels = [pair.bodyA.label, pair.bodyB.label];
+                    if (labels.includes("car") && labels.includes("obstacle")) {
                         if (shieldActive) {
                             shieldActive = false;
+                            World.remove(engine.world, labels.includes("obstacle") ? pair.bodyA : pair.bodyB);
                         } else {
                             endGame("Вы столкнулись! Игра окончена.");
                         }
