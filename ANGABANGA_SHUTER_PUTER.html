@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Паркур с уровнями</title>
+    <title>Паркур с улучшениями</title>
     <style>
         body {
             margin: 0;
@@ -16,25 +16,60 @@
             margin: auto;
             background: #87CEEB;
         }
-        #score {
+        #score, #money, #shop {
             position: absolute;
             top: 10px;
             left: 10px;
             font-size: 24px;
             color: #ffffff;
         }
+        #money {
+            top: 40px;
+        }
+        #shop {
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .shop-item {
+            display: block;
+            margin: 10px 0;
+            padding: 10px;
+            background: green;
+            color: white;
+            text-align: center;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .shop-item.disabled {
+            background: gray;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
     <div id="score">Очки: 0</div>
+    <div id="money">Монеты: 0</div>
+    <div id="shop">
+        <h3>Магазин улучшений</h3>
+        <button class="shop-item" id="upgradeSpeed">Больше скорости (10 монет)</button>
+        <button class="shop-item" id="upgradeJump">Выше прыжок (15 монет)</button>
+        <button class="shop-item" id="extraLife">Дополнительная жизнь (20 монет)</button>
+        <button class="shop-item" id="closeShop">Закрыть магазин</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        const WIDTH = 400;  // Ширина экрана
-        const HEIGHT = 600; // Высота экрана
+        const WIDTH = 400;
+        const HEIGHT = 600;
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
 
@@ -48,13 +83,22 @@
             speedY: 0,
             gravity: 0.5,
             jumpPower: -10,
-            isOnGround: false
+            isOnGround: false,
+            speedMultiplier: 1,
+            jumpMultiplier: 1
         };
 
         let platforms = [];
-        let cameraY = 0; // Смещение камеры
+        let cameraY = 0;
         let score = 0;
-        let level = 1;
+        let money = 0;
+        let lives = 1;
+
+        // Магазин
+        const shop = document.getElementById("shop");
+        const upgradeSpeed = document.getElementById("upgradeSpeed");
+        const upgradeJump = document.getElementById("upgradeJump");
+        const extraLife = document.getElementById("extraLife");
 
         // Создание стартовой платформы
         function createStartingPlatform() {
@@ -64,15 +108,15 @@
                 width: 100,
                 height: 10,
                 color: "green",
-                dx: 0 // Статичная платформа
+                dx: 0
             });
         }
 
-        // Создание дополнительных платформ
+        // Создание платформ
         function createPlatforms() {
-            const gap = 100 - level * 2; // Расстояние между платформами уменьшается с уровнем
+            const gap = 100; 
             for (let i = 1; i < 10; i++) {
-                const width = Math.random() * 40 + 60; // Случайная ширина платформы
+                const width = Math.random() * 40 + 60;
                 const x = Math.random() * (WIDTH - width);
                 const y = HEIGHT - i * gap;
                 platforms.push({ x, y, width, height: 10, color: "green", dx: 0 });
@@ -83,8 +127,8 @@
         function addPlatform() {
             const width = Math.random() * 40 + 60;
             const x = Math.random() * (WIDTH - width);
-            const y = platforms[platforms.length - 1].y - (100 - level * 2);
-            const moving = Math.random() > 0.7; // 30% платформы двигаются
+            const y = platforms[platforms.length - 1].y - 100;
+            const moving = Math.random() > 0.7;
             const dx = moving ? (Math.random() > 0.5 ? 1 : -1) * 1.5 : 0;
             platforms.push({ x, y, width, height: 10, color: "green", dx });
         }
@@ -103,34 +147,29 @@
             });
         }
 
-        // Обновление позиции платформ
+        // Обновление платформ
         function updatePlatforms() {
             platforms.forEach(platform => {
                 platform.x += platform.dx;
 
-                // Отражение движущихся платформ от стен
                 if (platform.x < 0 || platform.x + platform.width > WIDTH) {
                     platform.dx *= -1;
                 }
             });
 
-            // Удаление нижних платформ
             platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
         }
 
-        // Обновление позиции игрока
+        // Обновление игрока
         function updatePlayer() {
             player.x += player.speedX;
             player.y += player.speedY;
 
-            // Гравитация
             player.speedY += player.gravity;
 
-            // Ограничение по горизонтали
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
 
-            // Проверка столкновений с платформами
             player.isOnGround = false;
             platforms.forEach(platform => {
                 if (
@@ -144,37 +183,40 @@
                     player.y = platform.y - player.height;
                     player.isOnGround = true;
 
-                    // Увеличение очков за достижение платформы
-                    if (platform.y - cameraY > 0 && platform.color === "green") {
+                    if (platform.color === "green") {
                         score++;
-                        platform.color = "gray"; // Серая платформа уже "посещена"
-                        if (score % 10 === 0) level++; // Увеличение уровня каждые 10 очков
+                        money += 2; 
+                        platform.color = "gray"; 
+                        if (score % 10 === 0) addPlatform();
                     }
                 }
             });
 
-            // Обновление камеры
             if (player.y - cameraY < HEIGHT / 3) {
                 cameraY = player.y - HEIGHT / 3;
-                if (platforms[platforms.length - 1].y - cameraY > 0) {
-                    addPlatform();
-                }
             }
 
-            // Если игрок падает ниже экрана, сбрасываем игру
             if (player.y - cameraY > HEIGHT) {
-                resetGame();
+                if (lives > 0) {
+                    lives--;
+                    player.y = platforms[platforms.length - 1].y - 20;
+                    player.speedY = 0;
+                } else {
+                    resetGame();
+                }
             }
         }
 
         // Управление
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowLeft") {
-                player.speedX = -5;
+                player.speedX = -5 * player.speedMultiplier;
             } else if (e.key === "ArrowRight") {
-                player.speedX = 5;
-            } else if (e.key === " " && player.isOnGround) { // Прыжок
-                player.speedY = player.jumpPower;
+                player.speedX = 5 * player.speedMultiplier;
+            } else if (e.key === " " && player.isOnGround) {
+                player.speedY = player.jumpPower * player.jumpMultiplier;
+            } else if (e.key === "m" || e.key === "M") {
+                shop.style.display = shop.style.display === "block" ? "none" : "block";
             }
         });
 
@@ -184,16 +226,45 @@
             }
         });
 
+        // Покупки в магазине
+        upgradeSpeed.addEventListener("click", () => {
+            if (money >= 10) {
+                money -= 10;
+                player.speedMultiplier += 0.5;
+            }
+        });
+
+        upgradeJump.addEventListener("click", () => {
+            if (money >= 15) {
+                money -= 15;
+                player.jumpMultiplier += 0.5;
+            }
+        });
+
+        extraLife.addEventListener("click", () => {
+            if (money >= 20) {
+                money -= 20;
+                lives++;
+            }
+        });
+
+        document.getElementById("closeShop").addEventListener("click", () => {
+            shop.style.display = "none";
+        });
+
         // Сброс игры
         function resetGame() {
             player.x = WIDTH / 2 - 15;
             player.y = HEIGHT - 60;
-            player.speedX = 0;
+                        player.speedX = 0;
             player.speedY = 0;
             cameraY = 0;
             platforms = [];
             score = 0;
-            level = 1;
+            money = 0;
+            lives = 1;
+            player.speedMultiplier = 1;
+            player.jumpMultiplier = 1;
             createStartingPlatform();
             createPlatforms();
         }
@@ -202,14 +273,15 @@
         function gameLoop() {
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-            // Рисуем и обновляем объекты
+            // Обновляем и рисуем объекты
             drawPlatforms();
             drawPlayer();
             updatePlatforms();
             updatePlayer();
 
-            // Обновление очков
+            // Обновляем отображение очков и монет
             document.getElementById("score").textContent = `Очки: ${score}`;
+            document.getElementById("money").textContent = `Монеты: ${money}`;
 
             requestAnimationFrame(gameLoop);
         }
@@ -221,3 +293,4 @@
     </script>
 </body>
 </html>
+
