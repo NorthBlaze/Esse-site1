@@ -3,171 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Бильярд с управлением клавишами</title>
+    <title>Паркур</title>
     <style>
         body {
             margin: 0;
-            background-color: #2a2a2a;
+            overflow: hidden;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
         }
         canvas {
             display: block;
-            margin: 20px auto;
-            background-color: #0a5c23;
-            border: 15px solid #65350f;
-            border-radius: 15px;
+            margin: auto;
+            background: #87CEEB;
         }
     </style>
 </head>
 <body>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <canvas id="gameCanvas"></canvas>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.14.2/matter.min.js"></script>
     <script>
-        const { Engine, Render, World, Bodies, Body, Events } = Matter;
-
         const canvas = document.getElementById('gameCanvas');
-        const engine = Engine.create();
-        const render = Render.create({
-            canvas: canvas,
-            engine: engine,
-            options: {
-                width: canvas.width,
-                height: canvas.height,
-                background: '#0a5c23',
-                wireframes: false
+        const ctx = canvas.getContext('2d');
+
+        const WIDTH = 400;  // Ширина экрана
+        const HEIGHT = 600; // Высота экрана
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
+
+        // Переменные игры
+        const player = {
+            x: WIDTH / 2 - 15,
+            y: HEIGHT - 50,
+            width: 30,
+            height: 30,
+            color: "red",
+            speedX: 0,
+            speedY: 0,
+            gravity: 0.5,
+            jumpPower: -10,
+            isOnGround: false
+        };
+
+        let platforms = [];
+        let cameraY = 0; // Смещение камеры
+
+        // Создание платформ
+        function createPlatforms() {
+            const gap = 100; // Расстояние между платформами
+            for (let i = 0; i < 10; i++) {
+                const width = 80;
+                const x = Math.random() * (WIDTH - width);
+                const y = HEIGHT - i * gap;
+                platforms.push({ x, y, width, height: 10, color: "green" });
+            }
+        }
+
+        // Рисуем игрока
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
+        }
+
+        // Рисуем платформы
+        function drawPlatforms() {
+            platforms.forEach(platform => {
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
+            });
+        }
+
+        // Обновление позиции игрока
+        function updatePlayer() {
+            player.x += player.speedX;
+            player.y += player.speedY;
+
+            // Гравитация
+            player.speedY += player.gravity;
+
+            // Ограничение по горизонтали
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
+
+            // Проверка столкновений с платформами
+            player.isOnGround = false;
+            platforms.forEach(platform => {
+                if (
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.speedY >= 0
+                ) {
+                    player.speedY = 0;
+                    player.y = platform.y - player.height;
+                    player.isOnGround = true;
+                }
+            });
+
+            // Обновление камеры
+            if (player.y - cameraY < HEIGHT / 3) {
+                cameraY = player.y - HEIGHT / 3;
+            }
+
+            // Если игрок падает ниже экрана, сбрасываем игру
+            if (player.y - cameraY > HEIGHT) {
+                resetGame();
+            }
+        }
+
+        // Управление
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft") {
+                player.speedX = -5;
+            } else if (e.key === "ArrowRight") {
+                player.speedX = 5;
+            } else if (e.key === " " && player.isOnGround) { // Прыжок
+                player.speedY = player.jumpPower;
             }
         });
 
-        const WIDTH = canvas.width;
-        const HEIGHT = canvas.height;
-        const BALL_RADIUS = 15;
-        const POCKET_RADIUS = 20;
-
-        const WHITE_BALL_START = { x: WIDTH / 4, y: HEIGHT / 2 };
-        const balls = [];
-        const pockets = [];
-
-        let cueBall;
-
-        // Создание бортиков
-        function createWalls() {
-            const walls = [
-                Bodies.rectangle(WIDTH / 2, 0, WIDTH, 10, { isStatic: true }),
-                Bodies.rectangle(WIDTH / 2, HEIGHT, WIDTH, 10, { isStatic: true }),
-                Bodies.rectangle(0, HEIGHT / 2, 10, HEIGHT, { isStatic: true }),
-                Bodies.rectangle(WIDTH, HEIGHT / 2, 10, HEIGHT, { isStatic: true })
-            ];
-            World.add(engine.world, walls);
-        }
-
-        // Создание лунок
-        function createPockets() {
-            const pocketPositions = [
-                { x: 0, y: 0 },
-                { x: WIDTH / 2, y: 0 },
-                { x: WIDTH, y: 0 },
-                { x: 0, y: HEIGHT },
-                { x: WIDTH / 2, y: HEIGHT },
-                { x: WIDTH, y: HEIGHT }
-            ];
-            pocketPositions.forEach(pos => {
-                pockets.push(pos);
-                World.add(engine.world, Bodies.circle(pos.x, pos.y, POCKET_RADIUS, {
-                    isStatic: true,
-                    isSensor: true,
-                    render: { fillStyle: 'black' }
-                }));
-            });
-        }
-
-        // Создание белого шара
-        function createCueBall() {
-            cueBall = Bodies.circle(WHITE_BALL_START.x, WHITE_BALL_START.y, BALL_RADIUS, {
-                label: 'cueBall',
-                restitution: 0.9,
-                frictionAir: 0.02,
-                render: { fillStyle: 'white' }
-            });
-            World.add(engine.world, cueBall);
-        }
-
-        // Создание цветных шаров
-        function createBalls() {
-            for (let i = 0; i < 15; i++) {
-                const x = WIDTH / 1.5 + (i % 5) * (BALL_RADIUS * 2 + 5);
-                const y = HEIGHT / 2 + (Math.floor(i / 5) - 1) * (BALL_RADIUS * 2 + 5);
-                const ball = Bodies.circle(x, y, BALL_RADIUS, {
-                    label: `ball${i}`,
-                    restitution: 0.9,
-                    frictionAir: 0.02,
-                    render: { fillStyle: i % 2 === 0 ? 'red' : 'yellow' }
-                });
-                balls.push(ball);
-                World.add(engine.world, ball);
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+                player.speedX = 0;
             }
+        });
+
+        // Сброс игры
+        function resetGame() {
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 50;
+            player.speedX = 0;
+            player.speedY = 0;
+            cameraY = 0;
+            platforms = [];
+            createPlatforms();
         }
 
-        // Обновление позиции и удаление шаров
-        function checkPocketCollision() {
-            balls.forEach(ball => {
-                pockets.forEach(pocket => {
-                    const dist = Math.hypot(ball.position.x - pocket.x, ball.position.y - pocket.y);
-                    if (dist < POCKET_RADIUS) {
-                        World.remove(engine.world, ball);
-                        balls.splice(balls.indexOf(ball), 1);
-                    }
-                });
-            });
+        // Основной игровой цикл
+        function gameLoop() {
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
-            // Если белый шар попадает в лузу
-            pockets.forEach(pocket => {
-                const dist = Math.hypot(cueBall.position.x - pocket.x, cueBall.position.y - pocket.y);
-                if (dist < POCKET_RADIUS) {
-                    Body.setPosition(cueBall, WHITE_BALL_START);
-                    Body.setVelocity(cueBall, { x: 0, y: 0 });
-                }
-            });
+            // Рисуем и обновляем объекты
+            drawPlatforms();
+            drawPlayer();
+            updatePlayer();
+
+            requestAnimationFrame(gameLoop);
         }
 
-        // Управление клавишами
-        function setupKeyControls() {
-            document.addEventListener('keydown', (event) => {
-                const force = 0.02;
-                switch (event.key) {
-                    case 'ArrowUp':
-                        Body.applyForce(cueBall, cueBall.position, { x: 0, y: -force });
-                        break;
-                    case 'ArrowDown':
-                        Body.applyForce(cueBall, cueBall.position, { x: 0, y: force });
-                        break;
-                    case 'ArrowLeft':
-                        Body.applyForce(cueBall, cueBall.position, { x: -force, y: 0 });
-                        break;
-                    case 'ArrowRight':
-                        Body.applyForce(cueBall, cueBall.position, { x: force, y: 0 });
-                        break;
-                }
-            });
-        }
-
-        // Запуск игры
-        function startGame() {
-            createWalls();
-            createPockets();
-            createCueBall();
-            createBalls();
-            setupKeyControls();
-
-            // Проверка столкновений с лузами
-            Events.on(engine, 'beforeUpdate', () => {
-                checkPocketCollision();
-            });
-
-            Render.run(render);
-            Engine.run(engine);
-        }
-
-        startGame();
+        // Инициализация игры
+        createPlatforms();
+        gameLoop();
     </script>
 </body>
 </html>
