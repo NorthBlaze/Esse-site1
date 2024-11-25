@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Паркур с улучшениями</title>
+    <title>Паркур с магазином</title>
     <style>
         body {
             margin: 0;
@@ -94,13 +94,11 @@
         let money = 0;
         let lives = 1;
 
-        // Магазин
         const shop = document.getElementById("shop");
         const upgradeSpeed = document.getElementById("upgradeSpeed");
         const upgradeJump = document.getElementById("upgradeJump");
         const extraLife = document.getElementById("extraLife");
 
-        // Создание стартовой платформы
         function createStartingPlatform() {
             platforms.push({
                 x: WIDTH / 2 - 50,
@@ -112,7 +110,6 @@
             });
         }
 
-        // Создание платформ
         function createPlatforms() {
             const gap = 100; 
             for (let i = 1; i < 10; i++) {
@@ -123,7 +120,6 @@
             }
         }
 
-        // Добавление новой платформы
         function addPlatform() {
             const width = Math.random() * 40 + 60;
             const x = Math.random() * (WIDTH - width);
@@ -133,13 +129,11 @@
             platforms.push({ x, y, width, height: 10, color: "green", dx });
         }
 
-        // Рисуем игрока
         function drawPlayer() {
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
         }
 
-        // Рисуем платформы
         function drawPlatforms() {
             platforms.forEach(platform => {
                 ctx.fillStyle = platform.color;
@@ -147,7 +141,6 @@
             });
         }
 
-        // Обновление платформ
         function updatePlatforms() {
             platforms.forEach(platform => {
                 platform.x += platform.dx;
@@ -160,7 +153,6 @@
             platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
         }
 
-        // Обновление игрока
         function updatePlayer() {
             player.x += player.speedX;
             player.y += player.speedY;
@@ -207,7 +199,6 @@
             }
         }
 
-        // Управление
         document.addEventListener("keydown", (e) => {
             if (e.key === "ArrowLeft") {
                 player.speedX = -5 * player.speedMultiplier;
@@ -226,7 +217,6 @@
             }
         });
 
-        // Покупки в магазине
         upgradeSpeed.addEventListener("click", () => {
             if (money >= 10) {
                 money -= 10;
@@ -252,11 +242,10 @@
             shop.style.display = "none";
         });
 
-        // Сброс игры
         function resetGame() {
             player.x = WIDTH / 2 - 15;
             player.y = HEIGHT - 60;
-                        player.speedX = 0;
+            player.speedX = 0;
             player.speedY = 0;
             cameraY = 0;
             platforms = [];
@@ -266,7 +255,7 @@
             player.speedMultiplier = 1;
             player.jumpMultiplier = 1;
             createStartingPlatform();
-            createPlatforms();
+                        createPlatforms();
         }
 
         // Основной игровой цикл
