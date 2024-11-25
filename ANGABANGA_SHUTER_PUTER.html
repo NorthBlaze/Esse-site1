@@ -54,11 +54,28 @@
             background: gray;
             cursor: not-allowed;
         }
+        .button-link {
+            position: fixed; /* Фиксируем кнопку в левом верхнем углу */
+            top: 10px;       /* Отступ сверху */
+            left: 10px;      /* Отступ слева */
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #4CAF50;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button-link:hover {
+            background-color: #45a049;
+        }
+
     </style>
 </head>
 <body>
     <div id="score">Очки: 0</div>
-    <div id="money">Монеты: 0</div>
+    <div id="money">Мани: 0</div>
     <div id="shop">
         <h3>Магазин</h3>
         <button id="upgradeSpeed" class="shop-item">Скорость (50 монет)</button>
@@ -148,22 +165,22 @@
 
         // Магазин
         upgradeSpeed.addEventListener("click", () => {
-            if (money >= 50) {
-                money -= 50;
-                player.speedMultiplier += 0.5;
+            if (money >= 79) {
+                money -= 89;
+                player.speedMultiplier += 0.2;
             }
         });
 
         upgradeJump.addEventListener("click", () => {
-            if (money >= 75) {
-                money -= 75;
-                player.jumpMultiplier += 0.5;
+            if (money >= 89) {
+                money -= 89;
+                player.jumpMultiplier += 0.4;
             }
         });
 
         extraLife.addEventListener("click", () => {
-            if (money >= 100) {
-                money -= 100;
+            if (money >= 1099) {
+                money -= 1099;
             }
         });
 
