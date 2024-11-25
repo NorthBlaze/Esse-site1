@@ -34,15 +34,11 @@
     <script>
         const { Engine, Render, World, Bodies, Body, Events } = Matter;
 
-        let engine;
-        let render;
-        let car;
-        let obstacles = [];
+        let engine, render, car, obstacles = [];
         let gameOver = false;
-        let startTime;
-        let score = 0;
-        let points = 0;
+        let startTime, score = 0, points = 0;
         const movementSpeed = 1.5;
+        let shieldActive = false;
 
         function init() {
             engine = Engine.create();
@@ -57,14 +53,12 @@
                 }
             });
 
-            // Машина, фиксированная по вертикали, по центру экрана
             car = Bodies.rectangle(window.innerWidth / 2, window.innerHeight / 2, 50, 100, {
                 isStatic: true,
                 density: 0.001
             });
             World.add(engine.world, car);
 
-            // Создаем начальные препятствия
             for (let i = 0; i < 5; i++) {
                 createObstacle();
             }
@@ -72,7 +66,6 @@
             Engine.run(engine);
             Render.run(render);
 
-            // Отображаем магазин
             document.getElementById("shop").style.display = "block";
         }
 
@@ -84,6 +77,7 @@
             startTime = Date.now();
             score = 0;
             points = 0;
+            shieldActive = false;
             init();
             addControls();
             updateGame();
@@ -92,15 +86,11 @@
         function addControls() {
             document.addEventListener("keydown", (event) => {
                 if (gameOver) return;
-                if (event.key === "ArrowLeft") {
-                    if (car.position.x > 25) {
-                        Body.translate(car, { x: -10, y: 0 });
-                    }
+                if (event.key === "ArrowLeft" && car.position.x > 25) {
+                    Body.translate(car, { x: -10, y: 0 });
                 }
-                if (event.key === "ArrowRight") {
-                    if (car.position.x < window.innerWidth - 25) {
-                        Body.translate(car, { x: 10, y: 0 });
-                    }
+                if (event.key === "ArrowRight" && car.position.x < window.innerWidth - 25) {
+                    Body.translate(car, { x: 10, y: 0 });
                 }
             });
         }
@@ -129,13 +119,15 @@
             const elapsedTime = Math.floor((Date.now() - startTime) / 1000);
             document.getElementById("timer").textContent = "Время: " + elapsedTime;
             document.getElementById("score").textContent = "Очки: " + points;
-            score = elapsedTime;
-            points = elapsedTime;
 
             Events.on(engine, 'collisionStart', function(event) {
                 event.pairs.forEach(pair => {
                     if (obstacles.includes(pair.bodyA) || obstacles.includes(pair.bodyB)) {
-                        endGame("Вы столкнулись! Игра окончена.");
+                        if (shieldActive) {
+                            shieldActive = false;
+                        } else {
+                            endGame("Вы столкнулись! Игра окончена.");
+                        }
                     }
                 });
             });
@@ -163,8 +155,7 @@
                 alert("Размер уменьшен!");
             } else if (upgrade === 'shield' && points >= 20) {
                 points -= 20;
-                car.isSensor = true; // Временно делает машину "невосприимчивой" к столкновениям
-                setTimeout(() => car.isSensor = false, 5000); // Щит действует 5 секунд
+                shieldActive = true;
                 alert("Щит активирован!");
             } else {
                 alert("Недостаточно очков для покупки!");
