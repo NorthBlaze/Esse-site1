@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Паркур</title>
+    <title>Паркур с уровнями</title>
     <style>
         body {
             margin: 0;
@@ -16,9 +16,17 @@
             margin: auto;
             background: #87CEEB;
         }
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: #ffffff;
+        }
     </style>
 </head>
 <body>
+    <div id="score">Очки: 0</div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
@@ -30,7 +38,6 @@
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
 
-        // Переменные игры
         const player = {
             x: WIDTH / 2 - 15,
             y: HEIGHT - 50,
@@ -46,16 +53,28 @@
 
         let platforms = [];
         let cameraY = 0; // Смещение камеры
+        let score = 0;
+        let level = 1;
 
         // Создание платформ
         function createPlatforms() {
-            const gap = 100; // Расстояние между платформами
+            const gap = 100 - level * 2; // Расстояние между платформами уменьшается с уровнем
             for (let i = 0; i < 10; i++) {
-                const width = 80;
+                const width = Math.random() * 40 + 60; // Случайная ширина платформы
                 const x = Math.random() * (WIDTH - width);
                 const y = HEIGHT - i * gap;
-                platforms.push({ x, y, width, height: 10, color: "green" });
+                platforms.push({ x, y, width, height: 10, color: "green", dx: 0 });
             }
+        }
+
+        // Добавление новой платформы
+        function addPlatform() {
+            const width = Math.random() * 40 + 60;
+            const x = Math.random() * (WIDTH - width);
+            const y = platforms[platforms.length - 1].y - (100 - level * 2);
+            const moving = Math.random() > 0.7; // 30% платформы двигаются
+            const dx = moving ? (Math.random() > 0.5 ? 1 : -1) * 1.5 : 0;
+            platforms.push({ x, y, width, height: 10, color: "green", dx });
         }
 
         // Рисуем игрока
@@ -70,6 +89,21 @@
                 ctx.fillStyle = platform.color;
                 ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
             });
+        }
+
+        // Обновление позиции платформ
+        function updatePlatforms() {
+            platforms.forEach(platform => {
+                platform.x += platform.dx;
+
+                // Отражение движущихся платформ от стен
+                if (platform.x < 0 || platform.x + platform.width > WIDTH) {
+                    platform.dx *= -1;
+                }
+            });
+
+            // Удаление нижних платформ
+            platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
         }
 
         // Обновление позиции игрока
@@ -97,12 +131,22 @@
                     player.speedY = 0;
                     player.y = platform.y - player.height;
                     player.isOnGround = true;
+
+                    // Увеличение очков за достижение платформы
+                    if (platform.y - cameraY > 0 && platform.color === "green") {
+                        score++;
+                        platform.color = "gray"; // Серая платформа уже "посещена"
+                        if (score % 10 === 0) level++; // Увеличение уровня каждые 10 очков
+                    }
                 }
             });
 
             // Обновление камеры
             if (player.y - cameraY < HEIGHT / 3) {
                 cameraY = player.y - HEIGHT / 3;
+                if (platforms[platforms.length - 1].y - cameraY > 0) {
+                    addPlatform();
+                }
             }
 
             // Если игрок падает ниже экрана, сбрасываем игру
@@ -136,6 +180,8 @@
             player.speedY = 0;
             cameraY = 0;
             platforms = [];
+            score = 0;
+            level = 1;
             createPlatforms();
         }
 
@@ -146,7 +192,11 @@
             // Рисуем и обновляем объекты
             drawPlatforms();
             drawPlayer();
+            updatePlatforms();
             updatePlayer();
+
+            // Обновление очков
+            document.getElementById("score").textContent = `Очки: ${score}`;
 
             requestAnimationFrame(gameLoop);
         }
