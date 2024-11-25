@@ -40,7 +40,7 @@
 
         const player = {
             x: WIDTH / 2 - 15,
-            y: HEIGHT - 50,
+            y: HEIGHT - 60,
             width: 30,
             height: 30,
             color: "red",
@@ -56,10 +56,22 @@
         let score = 0;
         let level = 1;
 
-        // Создание платформ
+        // Создание стартовой платформы
+        function createStartingPlatform() {
+            platforms.push({
+                x: WIDTH / 2 - 50,
+                y: HEIGHT - 30,
+                width: 100,
+                height: 10,
+                color: "green",
+                dx: 0 // Статичная платформа
+            });
+        }
+
+        // Создание дополнительных платформ
         function createPlatforms() {
             const gap = 100 - level * 2; // Расстояние между платформами уменьшается с уровнем
-            for (let i = 0; i < 10; i++) {
+            for (let i = 1; i < 10; i++) {
                 const width = Math.random() * 40 + 60; // Случайная ширина платформы
                 const x = Math.random() * (WIDTH - width);
                 const y = HEIGHT - i * gap;
@@ -175,13 +187,14 @@
         // Сброс игры
         function resetGame() {
             player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 50;
+            player.y = HEIGHT - 60;
             player.speedX = 0;
             player.speedY = 0;
             cameraY = 0;
             platforms = [];
             score = 0;
             level = 1;
+            createStartingPlatform();
             createPlatforms();
         }
 
@@ -202,6 +215,7 @@
         }
 
         // Инициализация игры
+        createStartingPlatform();
         createPlatforms();
         gameLoop();
     </script>
