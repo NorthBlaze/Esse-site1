@@ -32,7 +32,7 @@
         canvas.height = window.innerHeight * 0.8;
 
         const engine = Engine.create();
-        engine.world.gravity.y = 0; // Отключение гравитации
+        engine.world.gravity.y = 0; // Отключаем гравитацию
 
         const render = Render.create({
             canvas: canvas,
@@ -62,13 +62,18 @@
         const balls = [];
         const ballRadius = 15;
 
+        let isDragging = false;
+        let dragStart = null;
+        let cueBall = null;
+
         function createBalls() {
             // Белый шар
-            balls.push(Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
+            cueBall = Bodies.circle(tableWidth / 4, tableHeight / 2, ballRadius, {
                 label: 'cueBall',
                 restitution: 0.9,
                 render: { fillStyle: 'white' }
-            }));
+            });
+            balls.push(cueBall);
 
             // Цветные шары
             for (let i = 0; i < 15; i++) {
@@ -100,55 +105,79 @@
             });
         }
 
-        let cueStick = null;
-        let cueStickAngle = 0;
-        let cueStickPower = 0;
+        canvas.addEventListener('mousedown', (event) => {
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = event.clientX - rect.left;
+            const mouseY = event.clientY - rect.top;
 
-        function createCueStick() {
-            cueStick = Bodies.rectangle(tableWidth / 4, tableHeight / 2, 150, 10, {
-                isStatic: true,
-                render: { fillStyle: 'brown' }
-            });
-            World.add(engine.world, cueStick);
-        }
+            const dx = mouseX - cueBall.position.x;
+            const dy = mouseY - cueBall.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
 
-        document.addEventListener('mousemove', (event) => {
-            const cueBall = balls.find(ball => ball.label === 'cueBall');
-            if (cueBall) {
-                const dx = event.clientX - cueBall.position.x;
-                const dy = event.clientY - cueBall.position.y;
-                cueStickAngle = Math.atan2(dy, dx);
-                Body.setAngle(cueStick, cueStickAngle);
-                Body.setPosition(cueStick, {
-                    x: cueBall.position.x - Math.cos(cueStickAngle) * 75,
-                    y: cueBall.position.y - Math.sin(cueStickAngle) * 75
+            if (distance <= ballRadius) {
+                isDragging = true;
+                dragStart = { x: mouseX, y: mouseY };
+            }
+        });
+
+        canvas.addEventListener('mousemove', (event) => {
+            if (isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const dx = mouseX - dragStart.x;
+                const dy = mouseY - dragStart.y;
+
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+
+                const forceLineX = cueBall.position.x - Math.cos(angle) * distance;
+                const forceLineY = cueBall.position.y - Math.sin(angle) * distance;
+
+                // Отрисовка линии силы
+                const context = render.context;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                Render.world(render);
+                context.beginPath();
+                context.moveTo(cueBall.position.x, cueBall.position.y);
+                context.lineTo(forceLineX, forceLineY);
+                context.strokeStyle = 'white';
+                context.lineWidth = 2;
+                context.stroke();
+            }
+        });
+
+        canvas.addEventListener('mouseup', (event) => {
+            if (isDragging) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                const dx = dragStart.x - mouseX;
+                const dy = dragStart.y - mouseY;
+
+                Body.applyForce(cueBall, cueBall.position, {
+                    x: dx * 0.005,
+                    y: dy * 0.005
                 });
-            }
-        });
 
-        document.addEventListener('mousedown', () => {
-            cueStickPower = 10; // Сила удара
-        });
+                isDragging = false;
+                dragStart = null;
 
-        document.addEventListener('mouseup', () => {
-            const cueBall = balls.find(ball => ball.label === 'cueBall');
-            if (cueBall) {
-                const forceX = Math.cos(cueStickAngle) * cueStickPower;
-                const forceY = Math.sin(cueStickAngle) * cueStickPower;
-                Body.applyForce(cueBall, cueBall.position, { x: forceX, y: forceY });
+                const context = render.context;
+                context.clearRect(0, 0, canvas.width, canvas.height);
+                Render.world(render);
             }
-            cueStickPower = 0;
         });
 
         createBalls();
-        createCueStick();
         createPockets();
         World.add(engine.world, [...balls, ...walls]);
 
         Events.on(engine, 'collisionStart', (event) => {
             event.pairs.forEach(pair => {
                 const { bodyA, bodyB } = pair;
-                const cueBall = balls.find(ball => ball.label === 'cueBall');
 
                 // Проверяем попадание в лузы
                 pockets.forEach(pocket => {
