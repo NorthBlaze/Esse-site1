@@ -75,12 +75,12 @@
 </head>
 <body>
     <div id="score">Очки: 0</div>
-    <div id="money">Мани: 0</div>
+    <div id="money">Монеты: 0</div>
     <div id="shop">
         <h3>Магазин</h3>
-        <button id="upgradeSpeed" class="shop-item">Скорость (50 монет)</button>
-        <button id="upgradeJump" class="shop-item">Прыжок (75 монет)</button>
-        <button id="extraLife" class="shop-item">Доп. жизнь (100 монет)</button>
+        <button id="upgradeSpeed" class="shop-item">Скорость (79 монет)</button>
+        <button id="upgradeJump" class="shop-item">Прыжок (89 монет)</button>
+        <button id="extraLife" class="shop-item">Возвращение к жизни :D (1099 монет)</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -166,7 +166,7 @@
         // Магазин
         upgradeSpeed.addEventListener("click", () => {
             if (money >= 79) {
-                money -= 89;
+                money -= 79;
                 player.speedMultiplier += 0.2;
             }
         });
@@ -266,7 +266,7 @@
             ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
 
             document.getElementById("score").textContent = `Очки: ${score}`;
-            document.getElementById("money").textContent = `Монеты: ${money}`;
+            document.getElementById("money").textContent = `Мани: ${money}`;
 
             requestAnimationFrame(gameLoop);
         }
