@@ -130,22 +130,24 @@
                 const mouseX = event.clientX - rect.left;
                 const mouseY = event.clientY - rect.top;
 
-                const dx = mouseX - dragStart.x;
-                const dy = mouseY - dragStart.y;
-
+                const dx = dragStart.x - mouseX;
+                const dy = dragStart.y - mouseY;
                 const distance = Math.sqrt(dx * dx + dy * dy);
+
                 const angle = Math.atan2(dy, dx);
 
-                const forceLineX = cueBall.position.x - Math.cos(angle) * distance;
-                const forceLineY = cueBall.position.y - Math.sin(angle) * distance;
+                // Рисуем стрелку траектории
+                const arrowLength = Math.min(distance, 100); // Ограничиваем длину стрелки
+                const arrowEndX = cueBall.position.x + Math.cos(angle) * arrowLength;
+                const arrowEndY = cueBall.position.y + Math.sin(angle) * arrowLength;
 
-                // Отрисовка линии силы
                 const context = render.context;
                 context.clearRect(0, 0, canvas.width, canvas.height);
                 Render.world(render);
+
                 context.beginPath();
                 context.moveTo(cueBall.position.x, cueBall.position.y);
-                context.lineTo(forceLineX, forceLineY);
+                context.lineTo(arrowEndX, arrowEndY);
                 context.strokeStyle = 'white';
                 context.lineWidth = 2;
                 context.stroke();
