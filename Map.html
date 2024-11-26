@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Маршрут на карте</title>
+    <title>Простая линия на карте</title>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=ваш_API_ключ" type="text/javascript"></script>
     <style>
         body {
@@ -28,50 +28,18 @@
                 zoom: 13
             });
 
-            // Точка начала маршрута
-            var startPoint = new ymaps.Placemark([47.992716, 37.914942], {
-                balloonContent: "Дом"
-            }, {
-                preset: 'islands#blueHomeIcon'
+            // Создание линии между двумя точками
+            var line = new ymaps.Polyline([
+                [47.992716, 37.914942], // Точка 1
+                [47.994157, 37.804148]  // Точка 2
+            ], {}, {
+                strokeColor: "#0000FF", // Цвет линии (синий)
+                strokeWidth: 4, // Толщина линии
+                strokeOpacity: 0.8 // Прозрачность линии
             });
 
-            // Точка конца маршрута
-            var endPoint = new ymaps.Placemark([47.994157, 37.804148], {
-                balloonContent: "ДОННТУ"
-            }, {
-                preset: 'islands#redEducationIcon'
-            });
-
-            // Добавление точек на карту
-            map.geoObjects.add(startPoint);
-            map.geoObjects.add(endPoint);
-
-            // Построение маршрута
-            var route = new ymaps.multiRouter.MultiRoute({
-                referencePoints: [
-                    [47.992716, 37.914942], // Дом
-                    [47.994157, 37.804148]  // ДОННТУ
-                ],
-                params: {
-                    routingMode: 'auto' // Режим маршрута: авто
-                }
-            }, {
-                wayPointStartIconColor: "#00AAFF", // Цвет иконки начальной точки
-                wayPointFinishIconColor: "#FF0000", // Цвет иконки конечной точки
-                routeStrokeWidth: 4, // Толщина линии маршрута
-                routeActiveStrokeColor: "#808080" // Цвет линии маршрута (серый)
-            });
-
-            // Добавление маршрута на карту
-            map.geoObjects.add(route);
-
-            // Масштабирование карты по маршруту
-            route.model.events.add('requestsuccess', function () {
-                var bounds = route.getBounds();
-                if (bounds) {
-                    map.setBounds(bounds, { checkZoomRange: true });
-                }
-            });
+            // Добавление линии на карту
+            map.geoObjects.add(line);
         }
     </script>
 </body>
