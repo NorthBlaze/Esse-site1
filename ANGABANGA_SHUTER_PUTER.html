@@ -16,24 +16,28 @@
             margin: auto;
             background: #222;
         }
-        #ui {
+        #ui, #levelInfo, #inventory {
             position: absolute;
+            font-size: 18px;
+            color: white;
+        }
+        #ui {
             top: 10px;
             left: 10px;
-            color: white;
-            font-size: 18px;
+        }
+        #levelInfo {
+            top: 10px;
+            right: 10px;
         }
         #inventory {
-            position: absolute;
             bottom: 10px;
             left: 10px;
-            color: white;
-            font-size: 16px;
         }
     </style>
 </head>
 <body>
     <div id="ui">Задание: Найдите золотой ключ!</div>
+    <div id="levelInfo">Уровень: 1</div>
     <div id="inventory">Инвентарь: пусто</div>
     <canvas id="gameCanvas"></canvas>
 
@@ -43,89 +47,60 @@
         canvas.width = 800;
         canvas.height = 600;
 
+        // Игровое состояние
+        const gameState = {
+            level: 1,
+            inventory: [],
+            task: "Найдите золотой ключ",
+            score: 0
+        };
+
         const player = {
             x: 50,
             y: 50,
             width: 30,
             height: 30,
             color: "blue",
-            speed: 3,
+            speed: 3
         };
 
-        const key = {
-            x: Math.random() * (canvas.width - 30),
-            y: Math.random() * (canvas.height - 30),
-            width: 20,
-            height: 20,
-            color: "gold",
-            collected: false,
-        };
-
-        const door = {
-            x: canvas.width - 80,
-            y: canvas.height / 2 - 40,
-            width: 60,
-            height: 80,
-            color: "brown",
-            unlocked: false,
-        };
-
-        const npc = {
-            x: 300,
-            y: 300,
-            width: 30,
-            height: 30,
-            color: "green",
-            message: "Привет! Найдите золотой ключ и принесите его к двери!",
-        };
-
-        const obstacles = [
-            { x: 200, y: 150, width: 100, height: 20, color: "red" },
-            { x: 400, y: 350, width: 150, height: 20, color: "red" },
-        ];
-
-        const inventory = [];
+        let key = {};
+        let door = {};
+        let npc = {};
+        let obstacles = [];
+        let coins = [];
 
         const keys = {};
         document.addEventListener("keydown", (e) => keys[e.key] = true);
         document.addEventListener("keyup", (e) => keys[e.key] = false);
 
-        function drawPlayer() {
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-        }
+        // Функции для генерации объектов
+        function generateLevel(level) {
+            // Обнуляем объекты уровня
+            key = { x: 100 + Math.random() * 600, y: 100 + Math.random() * 400, width: 20, height: 20, color: "gold", collected: false };
+            door = { x: canvas.width - 80, y: canvas.height / 2 - 40, width: 60, height: 80, color: "brown", unlocked: false };
+            npc = { x: 300, y: 100, width: 30, height: 30, color: "green", message: `Добро пожаловать на уровень ${level}! Найдите ключ и откройте дверь.` };
+            obstacles = [];
+            coins = [];
 
-        function drawKey() {
-            if (!key.collected) {
-                ctx.fillStyle = key.color;
-                ctx.fillRect(key.x, key.y, key.width, key.height);
+            // Генерация препятствий
+            for (let i = 0; i < 5 + level; i++) {
+                obstacles.push({ x: Math.random() * 700, y: Math.random() * 500, width: 100, height: 20, color: "red" });
+            }
+
+            // Генерация монет
+            for (let i = 0; i < 3 + level; i++) {
+                coins.push({ x: Math.random() * 700, y: Math.random() * 500, width: 15, height: 15, color: "yellow", collected: false });
             }
         }
 
-        function drawDoor() {
-            ctx.fillStyle = door.unlocked ? "green" : door.color;
-            ctx.fillRect(door.x, door.y, door.width, door.height);
-        }
-
-        function drawNPC() {
-            ctx.fillStyle = npc.color;
-            ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
-        }
-
-        function drawObstacles() {
-            obstacles.forEach(obstacle => {
-                ctx.fillStyle = obstacle.color;
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
-        }
-
+        // Управление
         function movePlayer() {
             if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
             if (keys["ArrowDown"] && player.y + player.height < canvas.height) player.y += player.speed;
             if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
             if (keys["ArrowRight"] && player.x + player.width < canvas.width) player.x += player.speed;
 
-            // Проверка столкновения с препятствиями
             obstacles.forEach(obstacle => {
                 if (checkCollision(player, obstacle)) {
                     if (keys["ArrowUp"]) player.y += player.speed;
@@ -143,40 +118,93 @@
                    a.y + a.height > b.y;
         }
 
+        // Логика игры
         function updateGame() {
             movePlayer();
 
-            // Проверка сбора ключа
-            if (checkCollision(player, key)) {
+            // Сбор ключа
+            if (!key.collected && checkCollision(player, key)) {
                 key.collected = true;
-                inventory.push("Золотой ключ");
-                document.getElementById("ui").textContent = "Задание: Отнесите ключ к двери!";
-                updateInventory();
+                gameState.inventory.push("Золотой ключ");
+                gameState.task = "Отнесите ключ к двери!";
+                updateUI();
             }
 
-            // Проверка открытия двери
+            // Сбор монет
+            coins.forEach(coin => {
+                if (!coin.collected && checkCollision(player, coin)) {
+                    coin.collected = true;
+                    gameState.score += 10;
+                }
+            });
+
+            // Открытие двери
             if (key.collected && checkCollision(player, door)) {
                 door.unlocked = true;
-                document.getElementById("ui").textContent = "Вы успешно прошли уровень!";
+                gameState.task = "Дверь открыта! Переход на следующий уровень.";
+                updateUI();
+                setTimeout(nextLevel, 2000);
             }
 
             // Взаимодействие с NPC
             if (checkCollision(player, npc)) {
-                document.getElementById("ui").textContent = npc.message;
+                gameState.task = npc.message;
+                updateUI();
             }
         }
 
-        function updateInventory() {
-            document.getElementById("inventory").textContent = `Инвентарь: ${inventory.join(", ") || "пусто"}`;
+        function updateUI() {
+            document.getElementById("ui").textContent = `Задание: ${gameState.task}`;
+            document.getElementById("levelInfo").textContent = `Уровень: ${gameState.level}`;
+            document.getElementById("inventory").textContent = `Инвентарь: ${gameState.inventory.join(", ") || "пусто"}`;
         }
 
+        // Переход на следующий уровень
+        function nextLevel() {
+            gameState.level++;
+            gameState.inventory = [];
+            gameState.task = `Найдите золотой ключ на уровне ${gameState.level}`;
+            player.x = 50;
+            player.y = 50;
+            generateLevel(gameState.level);
+            updateUI();
+        }
+
+        // Отрисовка объектов
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawPlayer();
-            drawKey();
-            drawDoor();
-            drawNPC();
-            drawObstacles();
+
+            // Игрок
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Ключ
+            if (!key.collected) {
+                ctx.fillStyle = key.color;
+                ctx.fillRect(key.x, key.y, key.width, key.height);
+            }
+
+            // Дверь
+            ctx.fillStyle = door.unlocked ? "green" : door.color;
+            ctx.fillRect(door.x, door.y, door.width, door.height);
+
+            // NPC
+            ctx.fillStyle = npc.color;
+            ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
+
+            // Препятствия
+            obstacles.forEach(obstacle => {
+                ctx.fillStyle = obstacle.color;
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+
+            // Монеты
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    ctx.fillStyle = coin.color;
+                    ctx.fillRect(coin.x, coin.y, coin.width, coin.height);
+                }
+            });
         }
 
         function gameLoop() {
@@ -185,6 +213,9 @@
             requestAnimationFrame(gameLoop);
         }
 
+        // Начало игры
+        generateLevel(gameState.level);
+        updateUI();
         gameLoop();
     </script>
 </body>
