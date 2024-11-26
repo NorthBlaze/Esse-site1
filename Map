@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой долгий путь</title>
+
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=ваш_API_ключ" type="text/javascript"></script>
+    <style>
+         body {
+            font-family: Arial, sans-serif;
+            
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background-image: url('https://resizer.mail.ru/p/382feb16-6b44-5cf6-a90c-c10745f19840/AAACkPE0RAw_lc5LRvh74o1ojSIm4yGHdS8IlafSNt_KfkF-oB1aJGLwBbAUDJKZYgTwKdEguGLrKia5SO9kNJG-VSw.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;      
+            justify-content: center; 
+            align-items: center;     
+            margin-top: 20px;       
+        }
+        #map {
+            width: 100%;
+            height: 500px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Я карта </h1>
+    <div id="map"></div>
+
+    <script>
+      
+        ymaps.ready(init);
+
+        function init() {
+           
+            var map = new ymaps.Map("map", {
+                center: [47.989455, 37.920160], 
+                zoom: 14
+            });
+
+            var startPoint = new ymaps.Placemark([47.989455, 37.920160], {
+                balloonContent: "Дом"
+            }, {
+                preset: 'islands#blueDotIcon'
+            });
+
+         
+            var endPoint = new ymaps.Placemark([47.988372, 37.918777], {
+                balloonContent: "Школа"
+            }, {
+                preset: 'islands#redDotIcon'
+            });
+
+            map.geoObjects.add(startPoint);
+            map.geoObjects.add(endPoint);
+
+            var route = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [
+                    [47.992716, 37.914942], // Дом
+                    [47.994157, 37.804148]  // ДОННТУ
+                ],
+                params: {
+                    routingMode: 'auto' 
+                }
+            });
+
+            map.geoObjects.add(route);
+        }
+    </script>
+</body>
+    <div class="container">
+
+    <button onclick="window.location.href='index.html'">Вернуться на главную/button>
+  
+</div>
+</html>
