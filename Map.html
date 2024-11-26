@@ -12,81 +12,62 @@
             margin: 0;
             padding: 0;
             height: 100vh;
-            background-image: url('https://resizer.mail.ru/p/382feb16-6b44-5cf6-a90c-c10745f19840/AAACkPE0RAw_lc5LRvh74o1ojSIm4yGHdS8IlafSNt_KfkF-oB1aJGLwBbAUDJKZYgTwKdEguGLrKia5SO9kNJG-VSw.jpg');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: white;
+            background-color: #f4f4f4;
             display: flex;
             flex-direction: column;
             align-items: center;
-            text-align: center;
-            padding-top: 50px;
+            justify-content: center;
         }
         #map {
             width: 100%;
-            height: 500px;
+            height: 90vh;
         }
         h1 {
-            color: #000000;
+            margin: 10px;
+            font-size: 24px;
+            color: #333;
         }
     </style>
 </head>
 <body>
-    <h1>Мой путь к успеху</h1>
+    <h1>Маршрут от дома до ДонНТУ</h1>
     <div id="map"></div>
 
     <script>
         ymaps.ready(init);
 
         function init() {
+            // Создаем карту
             var map = new ymaps.Map("map", {
-                center: [47.991, 37.860], 
+                center: [47.990, 37.860],
                 zoom: 13
             });
 
-            var startPoint = new ymaps.Placemark([47.992716, 37.914942], {
-                balloonContent: "Дом"
-            }, {
-                preset: 'islands#blueDotIcon'
-            });
+            // Точка старта и финиша
+            var startPoint = [47.992716, 37.914942]; // Дом
+            var endPoint = [47.994157, 37.804148]; // ДонНТУ
 
-            var endPoint = new ymaps.Placemark([47.994157, 37.804148], {
-                balloonContent: "ДОННТУ"
-            }, {
-                preset: 'islands#redDotIcon'
-            });
-
-            map.geoObjects.add(startPoint);
-            map.geoObjects.add(endPoint);
-
-            // Добавляем линию маршрута
-            var routeLine = new ymaps.Polyline(
-                [
-                    [47.992716, 37.914942], // Начало маршрута (дом)
-                    [47.991600, 37.910400], // Перекресток
-                    [47.990800, 37.905200], // Улица вдоль дороги
-                    [47.991300, 37.895000], // Улица перед въездом
-                    [47.992000, 37.885000], // Продолжение дороги
-                    [47.993500, 37.805000], // Поворот на университет
-                    [47.994157, 37.804148]  // Конец маршрута (ДОННТУ)
+            // Создаем маршрут
+            var multiRoute = new ymaps.multiRouter.MultiRoute({
+                referencePoints: [
+                    startPoint,
+                    endPoint
                 ],
-                {
-                    balloonContent: "Маршрут до ДОННТУ"
-                },
-                {
-                    strokeColor: "#000000", // Черный цвет
-                    strokeWidth: 4,         // Толщина линии
-                    strokeOpacity: 0.8      // Прозрачность линии
+                params: {
+                    routingMode: "auto" // Автомобильный маршрут
                 }
-            );
+            }, {
+                // Настройки маршрута
+                wayPointStartIconColor: "blue",
+                wayPointFinishIconColor: "red",
+                routeStrokeColor: "black",
+                routeStrokeWidth: 4,
+                routeStrokeOpacity: 0.8
+            });
 
-            map.geoObjects.add(routeLine);
+            // Добавляем маршрут на карту
+            map.geoObjects.add(multiRoute);
         }
     </script>
 </body>
-<div class="container">
-    <button onclick="window.location.href='index.html'">Главная</button>
-</div>
 </html>
