@@ -259,12 +259,13 @@
 
             if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
 
-            if (player.y - cameraY > HEIGHT) {
+            // Проверка падения
+            if (player.y > HEIGHT) {
                 loseLife();
             }
         }
 
-        // Утеря жизни
+        // Потеря жизни
         function loseLife() {
             if (lives > 1) {
                 lives--;
@@ -278,20 +279,7 @@
             }
         }
 
-        // Создание нового уровня
-        function newLevel() {
-            platforms = [];
-            score = 0;
-            player.speedMultiplier = 1;
-            player.jumpMultiplier = 1;
-            createStartingPlatform();
-            createPlatforms();
-            player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 60;
-            player.speedY = 0;
-            cameraY = 0;
-        }
-
+        // Сброс игры
         function resetGame() {
             lives = 3;
             score = 0;
@@ -304,6 +292,7 @@
             cameraY = 0;
         }
 
+        // Главный игровой цикл
         function gameLoop() {
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
 
