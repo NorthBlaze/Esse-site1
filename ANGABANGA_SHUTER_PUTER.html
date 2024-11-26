@@ -79,7 +79,23 @@
             color: white;
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
         }
-
+        #restartButton {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        #restartButton:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -95,6 +111,7 @@
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="gameOver" style="display: none;">Game Over</div>
+    <button id="restartButton">Начать заново</button>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -133,6 +150,9 @@
         const extraLife = document.getElementById("extraLife");
         const doubleScore = document.getElementById("doubleScore");
         const shield = document.getElementById("shield");
+
+        // Кнопка перезапуска игры
+        const restartButton = document.getElementById("restartButton");
 
         // Создание начальной платформы
         function createStartingPlatform() {
@@ -244,31 +264,20 @@
                     player.isOnGround = true;
 
                     if (platform.color === "green") {
-                        score++;
-                        money += 2;
-                        platform.color = "gray";
+                        score += 10; // Наращиваем очки за каждую платформу
+                        money += 5;  // Наращиваем монеты
                     }
                 }
             });
 
-            if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
-
-            if (player.y - cameraY > HEIGHT) {
-                showGameOver();
-            }
+            if (player.y > HEIGHT) gameOver();
         }
 
-        // Показать Game Over
-        function showGameOver() {
-            document.getElementById("gameOver").style.display = "block";
-        }
-
-        // Главный игровой цикл
+        // Игровой процесс
         function gameLoop() {
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
-
-            updatePlatforms();
             updatePlayer();
+            updatePlatforms();
 
             ctx.fillStyle = "green";
             platforms.forEach(platform => {
@@ -285,6 +294,30 @@
 
             requestAnimationFrame(gameLoop);
         }
+
+        // Завершение игры
+        function gameOver() {
+            document.getElementById("gameOver").style.display = "block";
+            restartButton.style.display = "block";
+        }
+
+        // Начать игру заново
+        restartButton.addEventListener("click", () => {
+            platforms = [];
+            score = 0;
+            money = 0;
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            cameraY = 0;
+
+            createStartingPlatform();
+            createPlatforms();
+
+            document.getElementById("gameOver").style.display = "none";
+            restartButton.style.display = "none";
+
+            gameLoop();
+        });
 
         createStartingPlatform();
         createPlatforms();
