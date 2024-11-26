@@ -8,12 +8,11 @@
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
+            background-color: #000;
         }
         canvas {
             display: block;
             margin: auto;
-            background: #000;
         }
         #ui {
             position: absolute;
@@ -36,45 +35,51 @@
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
+        // Изображения
         const mapImage = new Image();
         mapImage.src = 'https://avatars.mds.yandex.net/i?id=2917a8cafce4b4675ee034a9f9f618df_l-5876669-images-thumbs&n=13';
 
         const playerImage = new Image();
-        playerImage.src = 'https://avatars.mds.yandex.net/i?id=8d3c7509fece78c9c0cf5415c17d1376_l-4949878-images-thumbs&n=13';
+        playerImage.src = 'https://i.imgur.com/WB2DxTT.png'; // Прозрачный персонаж
+
+        const chestImage = new Image();
+        chestImage.src = 'https://i.imgur.com/9EZ7qqT.png'; // Сундук
 
         const keyImage = new Image();
-        keyImage.src = 'https://art.pixilart.com/82d984fcd46cafb.gif';
-
-        const coinImage = new Image();
-        coinImage.src = 'https://art.pixilart.com/cec63c94b0a7a1a.gif';
+        keyImage.src = 'https://art.pixilart.com/82d984fcd46cafb.gif'; // Ключ
 
         const doorImage = new Image();
-        doorImage.src = 'https://avatars.mds.yandex.net/i?id=e38a11e37cb4da1813c466d9b7adecdc_l-10551030-images-thumbs&n=13';
+        doorImage.src = 'https://avatars.mds.yandex.net/i?id=e38a11e37cb4da1813c466d9b7adecdc_l-10551030-images-thumbs&n=13'; // Дверь
 
+        // Персонаж
         const player = {
             x: 100,
-            y: 400,
-            width: 50,
-            height: 50,
-            speed: 5,
-            velocityY: 0,
-            jumpPower: -15,
-            gravity: 0.8,
-            onGround: false
+            y: 100,
+            width: 40,
+            height: 40,
+            speed: 3
         };
 
-        const key = { x: 300, y: 200, width: 30, height: 30, collected: false };
-        const door = { x: 600, y: 400, width: 60, height: 90, unlocked: false };
-        const coins = [
-            { x: 200, y: 300, width: 20, height: 20, collected: false },
-            { x: 400, y: 250, width: 20, height: 20, collected: false },
-        ];
-
+        // Объекты игры
+        const chests = [];
         const walls = [
-            { x: 0, y: 550, width: 800, height: 50 }, // Пол
-            { x: 100, y: 400, width: 100, height: 20 }, // Пример стены
-            { x: 400, y: 300, width: 150, height: 20 }, // Пример стены
+            { x: 50, y: 200, width: 100, height: 50 }, // Пример стены
+            { x: 300, y: 400, width: 200, height: 100 }
         ];
+        const door = { x: 600, y: 400, width: 50, height: 70, unlocked: false };
+
+        let hasKey = false;
+
+        // Генерация сундуков
+        for (let i = 0; i < 5; i++) {
+            chests.push({
+                x: Math.random() * (canvas.width - 50),
+                y: Math.random() * (canvas.height - 50),
+                width: 40,
+                height: 40,
+                containsKey: Math.random() > 0.7 // С шансом 30% в сундуке будет ключ
+            });
+        }
 
         const keys = {};
         document.addEventListener('keydown', (e) => (keys[e.key] = true));
@@ -88,102 +93,74 @@
             ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
         }
 
-        function drawKey() {
-            if (!key.collected) {
-                ctx.drawImage(keyImage, key.x, key.y, key.width, key.height);
-            }
+        function drawWalls() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            walls.forEach((wall) => {
+                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+            });
         }
 
         function drawDoor() {
             ctx.drawImage(doorImage, door.x, door.y, door.width, door.height);
         }
 
-        function drawCoins() {
-            coins.forEach((coin) => {
-                if (!coin.collected) {
-                    ctx.drawImage(coinImage, coin.x, coin.y, coin.width, coin.height);
-                }
-            });
-        }
-
-        function drawWalls() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            walls.forEach((wall) => {
-                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
+        function drawChests() {
+            chests.forEach((chest) => {
+                ctx.drawImage(chestImage, chest.x, chest.y, chest.width, chest.height);
             });
         }
 
         function movePlayer() {
-            player.velocityY += player.gravity;
-            player.y += player.velocityY;
-
-            if (player.y + player.height > canvas.height) {
-                player.y = canvas.height - player.height;
-                player.onGround = true;
-                player.velocityY = 0;
-            } else {
-                player.onGround = false;
-            }
-
-            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
-            if (keys['ArrowRight'] && player.x + player.width < canvas.width) player.x += player.speed;
-
-            walls.forEach((wall) => {
-                if (
-                    player.y + player.height >= wall.y &&
-                    player.y + player.height <= wall.y + wall.height &&
-                    player.x + player.width > wall.x &&
-                    player.x < wall.x + wall.width &&
-                    player.velocityY >= 0
-                ) {
-                    player.onGround = true;
-                    player.velocityY = 0;
-                    player.y = wall.y - player.height;
-                }
-            });
-
-            if (keys[' '] && player.onGround) {
-                player.velocityY = player.jumpPower;
-                player.onGround = false;
-            }
+            if (keys['ArrowUp'] && !isColliding(player.x, player.y - player.speed)) player.y -= player.speed;
+            if (keys['ArrowDown'] && !isColliding(player.x, player.y + player.speed)) player.y += player.speed;
+            if (keys['ArrowLeft'] && !isColliding(player.x - player.speed, player.y)) player.x -= player.speed;
+            if (keys['ArrowRight'] && !isColliding(player.x + player.speed, player.y)) player.x += player.speed;
         }
 
-        function updateGame() {
-            movePlayer();
+        function isColliding(nextX, nextY) {
+            // Проверка столкновений с границами карты
+            if (nextX < 0 || nextX + player.width > canvas.width || nextY < 0 || nextY + player.height > canvas.height)
+                return true;
 
-            // Сбор ключа
-            if (
-                player.x < key.x + key.width &&
-                player.x + player.width > key.x &&
-                player.y < key.y + key.height &&
-                player.y + player.height > key.y
-            ) {
-                key.collected = true;
-            }
+            // Проверка столкновений со стенами
+            return walls.some(
+                (wall) =>
+                    nextX < wall.x + wall.width &&
+                    nextX + player.width > wall.x &&
+                    nextY < wall.y + wall.height &&
+                    nextY + player.height > wall.y
+            );
+        }
 
-            // Сбор монет
-            coins.forEach((coin) => {
+        function checkInteractions() {
+            // Проверка взаимодействия с сундуками
+            chests.forEach((chest, index) => {
                 if (
-                    !coin.collected &&
-                    player.x < coin.x + coin.width &&
-                    player.x + player.width > coin.x &&
-                    player.y < coin.y + coin.height &&
-                    player.y + player.height > coin.y
+                    player.x < chest.x + chest.width &&
+                    player.x + player.width > chest.x &&
+                    player.y < chest.y + chest.height &&
+                    player.y + player.height > chest.y
                 ) {
-                    coin.collected = true;
+                    if (chest.containsKey) {
+                        hasKey = true;
+                        document.getElementById('ui').textContent = 'Вы нашли ключ! Теперь откройте дверь.';
+                    } else {
+                        document.getElementById('ui').textContent = 'Сундук пуст.';
+                    }
+                    chests.splice(index, 1); // Удаляем сундук
                 }
             });
 
-            // Открытие двери
+            // Проверка взаимодействия с дверью
             if (
-                key.collected &&
+                hasKey &&
                 player.x < door.x + door.width &&
                 player.x + player.width > door.x &&
                 player.y < door.y + door.height &&
                 player.y + player.height > door.y
             ) {
                 door.unlocked = true;
-                document.getElementById('ui').textContent = 'Вы прошли уровень!';
+                document.getElementById('ui').textContent = 'Дверь открыта! Вы прошли уровень.';
             }
         }
 
@@ -191,14 +168,14 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             drawMap();
             drawWalls();
-            drawCoins();
-            drawKey();
             drawDoor();
+            drawChests();
             drawPlayer();
         }
 
         function gameLoop() {
-            updateGame();
+            movePlayer();
+            checkInteractions();
             drawGame();
             requestAnimationFrame(gameLoop);
         }
