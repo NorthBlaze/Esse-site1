@@ -107,7 +107,6 @@
         <button id="upgradeJump" class="shop-item">Прыжок (89 монет)</button>
         <button id="extraLife" class="shop-item">Возвращение к жизни :D (1099 монет)</button>
         <button id="doubleScore" class="shop-item">Удвоение очков (199 монет)</button>
-        <button id="shield" class="shop-item">Щит (399 монет)</button>
     </div>
     <canvas id="gameCanvas"></canvas>
     <div id="gameOver" style="display: none;">Game Over</div>
@@ -149,42 +148,41 @@
         const upgradeJump = document.getElementById("upgradeJump");
         const extraLife = document.getElementById("extraLife");
         const doubleScore = document.getElementById("doubleScore");
-        const shield = document.getElementById("shield");
 
         // Кнопка перезапуска игры
         const restartButton = document.getElementById("restartButton");
 
         // Создание начальной платформы
-function createStartingPlatform() {
-    platforms.push({
-        x: WIDTH / 2 - 50,
-        y: HEIGHT - 30,
-        width: 100,
-        height: 10,
-        color: "green",
-        dx: 0,
-        isVisited: false // Флаг, указывающий, что очки еще не начислены
-    });
-}
+        function createStartingPlatform() {
+            platforms.push({
+                x: WIDTH / 2 - 50,
+                y: HEIGHT - 30,
+                width: 100,
+                height: 10,
+                color: "green",
+                dx: 0,
+                isVisited: false // Флаг, указывающий, что очки еще не начислены
+            });
+        }
 
-// Создание платформ
-function createPlatforms(count = 20) {
-    const gap = 100;
-    for (let i = 0; i < count; i++) {
-        const width = Math.random() * 50 + 50;
-        const x = Math.random() * (WIDTH - width);
-        const y = platforms.length > 0 ? platforms[platforms.length - 1].y - gap : HEIGHT - 30 - i * gap;
-        platforms.push({
-            x,
-            y,
-            width,
-            height: 10,
-            color: "green",
-            dx: 0,
-            isVisited: false // Изначально очки за платформу не начислены
-        });
-    }
-}
+        // Создание платформ
+        function createPlatforms(count = 20) {
+            const gap = 100;
+            for (let i = 0; i < count; i++) {
+                const width = Math.random() * 50 + 50;
+                const x = Math.random() * (WIDTH - width);
+                const y = platforms.length > 0 ? platforms[platforms.length - 1].y - gap : HEIGHT - 30 - i * gap;
+                platforms.push({
+                    x,
+                    y,
+                    width,
+                    height: 10,
+                    color: "green",
+                    dx: 0,
+                    isVisited: false // Изначально очки за платформу не начислены
+                });
+            }
+        }
 
         // Управление
         document.addEventListener("keydown", (e) => {
@@ -226,13 +224,50 @@ function createPlatforms(count = 20) {
             }
         });
 
-        shield.addEventListener("click", () => {
-            if (money >= 399) {
-                money -= 399;
-                // Защитный щит - временный эффект
-                // Реализовать логику защиты здесь, например, игнорировать падение на определенное время
+        // Обновление игрока
+        function updatePlayer() {
+            player.x += player.speedX;
+            player.y += player.speedY;
+            player.speedY += player.gravity;
+
+            // Ограничиваем игрока в пределах игрового поля по горизонтали
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
+
+            player.isOnGround = false;
+
+            platforms.forEach(platform => {
+                if (
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.speedY >= 0
+                ) {
+                    player.speedY = 0;
+                    player.y = platform.y - player.height;
+                    player.isOnGround = true;
+
+                    // Начисляем очки и монеты только в первый раз
+                    if (!platform.isVisited) {
+                        score += 10; // Наращиваем очки
+                        money += 5;  // Наращиваем монеты
+                        platform.isVisited = true; // Устанавливаем флаг, чтобы повторное начисление не происходило
+                        platform.color = "gray"; // Меняем цвет платформы, чтобы показать, что она уже использована
+                    }
+                }
+            });
+
+            // Обновляем позицию камеры
+            if (player.y - cameraY < HEIGHT / 3) {
+                cameraY = player.y - HEIGHT / 3;
             }
-        });
+
+            // Если игрок падает ниже экрана
+            if (player.y - cameraY > HEIGHT) {
+                gameOver();
+            }
+        }
 
         // Обновление платформ
         function updatePlatforms() {
@@ -250,43 +285,34 @@ function createPlatforms(count = 20) {
             }
         }
 
-        // Обновление игрока
-function updatePlayer() {
-    player.x += player.speedX;
-    player.y += player.speedY;
-    player.speedY += player.gravity;
-
-    if (player.x < 0) player.x = 0;
-    if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
-
-    player.isOnGround = false;
-
-    platforms.forEach(platform => {
-        if (
-            player.y + player.height >= platform.y &&
-            player.y + player.height <= platform.y + platform.height &&
-            player.x + player.width > platform.x &&
-            player.x < platform.x + platform.width &&
-            player.speedY >= 0
-        ) {
-            player.speedY = 0;
-            player.y = platform.y - player.height;
-            player.isOnGround = true;
-
-            // Начисляем очки и монеты только в первый раз
-            if (!platform.isVisited) {
-                score += 10; // Наращиваем очки
-                money += 5;  // Наращиваем монеты
-                platform.isVisited = true; // Устанавливаем флаг, чтобы повторное начисление не происходило
-                platform.color = "gray"; // Меняем цвет платформы, чтобы показать, что она уже использована
-            }
+        // Завершение игры
+        function gameOver() {
+            document.getElementById("gameOver").style.display = "block";
+            restartButton.style.display = "block";
         }
-    });
 
-    if (player.y > HEIGHT) gameOver();
-}
+        // Начать игру заново
+        restartButton.addEventListener("click", () => {
+            platforms = [];
+            score = 0;
+            money = 0;
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            player.speedY = 0; // Сброс вертикальной скорости
+            cameraY = 0;
 
-        // Игровой процесс
+            createStartingPlatform();
+            createPlatforms();
+
+            // Скрываем элементы "Game Over" и кнопку перезапуска
+            document.getElementById("gameOver").style.display = "none";
+            restartButton.style.display = "none";
+
+            // Запускаем игру заново
+            requestAnimationFrame(gameLoop);
+        });
+
+        // Главный игровой цикл
         function gameLoop() {
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
             updatePlayer();
@@ -308,32 +334,6 @@ function updatePlayer() {
             requestAnimationFrame(gameLoop);
         }
 
-        // Завершение игры
-        function gameOver() {
-            document.getElementById("gameOver").style.display = "block";
-            restartButton.style.display = "block";
-        }
-
-        // Начать игру заново
-restartButton.addEventListener("click", () => {
-    platforms = [];
-    score = 0;
-    money = 0;
-    player.x = WIDTH / 2 - 15;
-    player.y = HEIGHT - 60;
-    player.speedY = 0; // Сброс вертикальной скорости
-    cameraY = 0;
-
-    createStartingPlatform();
-    createPlatforms();
-
-    // Скрываем элементы "Game Over" и кнопку перезапуска
-    document.getElementById("gameOver").style.display = "none";
-    restartButton.style.display = "none";
-
-    // Запускаем игру заново
-    requestAnimationFrame(gameLoop);
-});
         createStartingPlatform();
         createPlatforms();
         gameLoop();
