@@ -78,23 +78,7 @@
             font-size: 40px;
             color: white;
             text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
-        }
-        #restartButton {
-            position: absolute;
-            top: 60%;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 10px 20px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
             display: none;
-        }
-        #restartButton:hover {
-            background-color: #45a049;
         }
     </style>
 </head>
@@ -109,8 +93,7 @@
         <button id="doubleScore" class="shop-item">Удвоение очков (199 монет)</button>
     </div>
     <canvas id="gameCanvas"></canvas>
-    <div id="gameOver" style="display: none;">Game Over</div>
-    <button id="restartButton">Начать заново</button>
+    <div id="gameOver">Game Over</div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -152,9 +135,6 @@
         const upgradeJump = document.getElementById("upgradeJump");
         const extraLife = document.getElementById("extraLife");
         const doubleScore = document.getElementById("doubleScore");
-
-        // Кнопка перезапуска игры
-        const restartButton = document.getElementById("restartButton");
 
         // Функция для сброса значений игрока и игры
         function resetGame() {
@@ -312,21 +292,13 @@
 
         // Завершение игры
         function gameOver() {
-            document.getElementById("gameOver").style.display = "block";
-            restartButton.style.display = "block";
+            document.getElementById("gameOver").style.display = "block"; // Показываем "Game Over"
+            setTimeout(() => {
+                document.getElementById("gameOver").style.display = "none"; // Скрываем "Game Over"
+                resetGame(); // Сбрасываем игру
+                requestAnimationFrame(gameLoop); // Запускаем игру заново
+            }, 3000); // Задержка 3 секунды
         }
-
-        // Начать игру заново
-        restartButton.addEventListener("click", () => {
-            resetGame();
-            // Скрываем элементы "Game Over" и кнопку перезапуска
-            document.getElementById("gameOver").style.display = "none";
-            restartButton.style.display = "none";
-
-            // Запускаем игру заново
-            lastTime = performance.now(); // Устанавливаем время на начало
-            requestAnimationFrame(gameLoop);
-        });
 
         // Главный игровой цикл
         function gameLoop() {
