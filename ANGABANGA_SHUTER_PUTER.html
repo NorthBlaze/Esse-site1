@@ -158,14 +158,20 @@
 
         // Функция для сброса значений игрока и игры
         function resetGame() {
+            // Сброс всех значений игрока к начальным
             player.x = WIDTH / 2 - 15;
             player.y = HEIGHT - 60;
             player.speedX = 0;
             player.speedY = 0;
+            player.speedMultiplier = 1;  // Сбрасываем множитель скорости
+            player.jumpMultiplier = 1;   // Сбрасываем множитель прыжка
             player.isOnGround = false;
+
+            // Сброс всех игровых переменных
             score = 0;
             money = 0;
             cameraY = 0;
+
             platforms = [];
             createStartingPlatform();
             createPlatforms();
