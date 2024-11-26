@@ -16,7 +16,7 @@
             margin: auto;
             background: #87CEEB;
         }
-        #score, #money, #lives, #shop {
+        #score, #money, #shop {
             position: absolute;
             font-size: 24px;
             color: #ffffff;
@@ -27,10 +27,6 @@
         }
         #money {
             top: 40px;
-            left: 10px;
-        }
-        #lives {
-            top: 70px;
             left: 10px;
         }
         #shop {
@@ -59,9 +55,9 @@
             cursor: not-allowed;
         }
         .button-link {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
+            position: fixed; /* Фиксируем кнопку в левом верхнем углу */
+            bottom: 10px;       /* Отступ снизу */
+            left: 10px;      /* Отступ слева */
             padding: 10px 20px;
             font-size: 16px;
             color: white;
@@ -74,20 +70,31 @@
         .button-link:hover {
             background-color: #45a049;
         }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            color: white;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+        }
+
     </style>
 </head>
 <body>
     <div id="score">Очки: 0</div>
     <div id="money">Монеты: 0</div>
-    <div id="lives">Жизни: 3</div>
     <div id="shop">
         <h3>Магазин</h3>
         <button id="upgradeSpeed" class="shop-item">Скорость (79 монет)</button>
         <button id="upgradeJump" class="shop-item">Прыжок (89 монет)</button>
         <button id="extraLife" class="shop-item">Возвращение к жизни :D (1099 монет)</button>
-        <button id="upgradeGravity" class="shop-item">Уменьшить гравитацию (129 монет)</button>
+        <button id="doubleScore" class="shop-item">Удвоение очков (199 монет)</button>
+        <button id="shield" class="shop-item">Щит (399 монет)</button>
     </div>
     <canvas id="gameCanvas"></canvas>
+    <div id="gameOver" style="display: none;">Game Over</div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
@@ -111,7 +118,6 @@
             jumpPower: -10,
             speedMultiplier: 1,
             jumpMultiplier: 1,
-            gravityMultiplier: 1,
             isOnGround: false,
         };
 
@@ -120,13 +126,13 @@
         let score = 0;
         let money = 0;
         let cameraY = 0;
-        let lives = 3;
 
         // Магазин
         const upgradeSpeed = document.getElementById("upgradeSpeed");
         const upgradeJump = document.getElementById("upgradeJump");
         const extraLife = document.getElementById("extraLife");
-        const upgradeGravity = document.getElementById("upgradeGravity");
+        const doubleScore = document.getElementById("doubleScore");
+        const shield = document.getElementById("shield");
 
         // Создание начальной платформы
         function createStartingPlatform() {
@@ -149,15 +155,6 @@
                 const y = platforms.length > 0 ? platforms[platforms.length - 1].y - gap : HEIGHT - 30 - i * gap;
                 platforms.push({ x, y, width, height: 10, color: "green", dx: 0 });
             }
-        }
-
-        function addPlatform() {
-            const width = Math.random() * 50 + 50;
-            const x = Math.random() * (WIDTH - width);
-            const y = platforms[platforms.length - 1].y - 100;
-            const moving = Math.random() > 0.7;
-            const dx = moving ? (Math.random() > 0.5 ? 1 : -1) * 1.5 : 0;
-            platforms.push({ x, y, width, height: 10, color: "green", dx });
         }
 
         // Управление
@@ -189,25 +186,22 @@
         extraLife.addEventListener("click", () => {
             if (money >= 1099) {
                 money -= 1099;
-                lives += 1;
-
-                // Добавляем платформу под игроком
-                const newPlatform = {
-                    x: player.x - 50, // Платформа будет появляться под игроком
-                    y: player.y + player.height + 10,
-                    width: 100,
-                    height: 10,
-                    color: "green",
-                    dx: 0
-                };
-                platforms.push(newPlatform);
+                createStartingPlatform(); // Платформа появляется при активации жизни
             }
         });
 
-        upgradeGravity.addEventListener("click", () => {
-            if (money >= 129) {
-                money -= 129;
-                player.gravityMultiplier -= 0.1;
+        doubleScore.addEventListener("click", () => {
+            if (money >= 199) {
+                money -= 199;
+                score *= 2; // Удвоение очков
+            }
+        });
+
+        shield.addEventListener("click", () => {
+            if (money >= 399) {
+                money -= 399;
+                // Защитный щит - временный эффект
+                // Реализовать логику защиты здесь, например, игнорировать падение на определенное время
             }
         });
 
@@ -231,7 +225,7 @@
         function updatePlayer() {
             player.x += player.speedX;
             player.y += player.speedY;
-            player.speedY += player.gravity * player.gravityMultiplier;
+            player.speedY += player.gravity;
 
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
@@ -259,37 +253,14 @@
 
             if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
 
-            // Проверка падения
-            if (player.y > HEIGHT) {
-                loseLife();
+            if (player.y - cameraY > HEIGHT) {
+                showGameOver();
             }
         }
 
-        // Потеря жизни
-        function loseLife() {
-            if (lives > 1) {
-                lives--;
-                player.x = WIDTH / 2 - 15;
-                player.y = HEIGHT - 60;
-                player.speedY = 0;
-                cameraY = 0;
-            } else {
-                alert("Game Over!");
-                resetGame();
-            }
-        }
-
-        // Сброс игры
-        function resetGame() {
-            lives = 3;
-            score = 0;
-            money = 0;
-            createStartingPlatform();
-            createPlatforms();
-            player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 60;
-            player.speedY = 0;
-            cameraY = 0;
+        // Показать Game Over
+        function showGameOver() {
+            document.getElementById("gameOver").style.display = "block";
         }
 
         // Главный игровой цикл
@@ -299,17 +270,18 @@
             updatePlatforms();
             updatePlayer();
 
+            ctx.fillStyle = "green";
             platforms.forEach(platform => {
-                ctx.fillStyle = platform.color;
                 ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
             });
 
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
 
-            document.getElementById("score").textContent = `Очки: ${score}`;
-            document.getElementById("money").textContent = `Мани: ${money}`;
-            document.getElementById("lives").textContent = `Жизни: ${lives}`;
+            ctx.fillStyle = "white";
+            ctx.font = "24px Arial";
+            ctx.fillText("Очки: " + score, 10, 30);
+            ctx.fillText("Монеты: " + money, 10, 60);
 
             requestAnimationFrame(gameLoop);
         }
@@ -318,6 +290,5 @@
         createPlatforms();
         gameLoop();
     </script>
-    <a href="index.html" class="button-link">Вернуться на главную</a>
 </body>
 </html>
