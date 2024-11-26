@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,202 +9,200 @@
             margin: 0;
             overflow: hidden;
             background-color: #87CEEB;
-            font-family: Arial, sans-serif;
         }
         canvas {
             display: block;
-            margin: auto;
-            background: #222;
-        }
-        #ui, #levelInfo, #inventory {
-            position: absolute;
-            font-size: 18px;
-            color: white;
         }
         #ui {
+            position: absolute;
             top: 10px;
             left: 10px;
-        }
-        #levelInfo {
-            top: 10px;
-            right: 10px;
-        }
-        #inventory {
-            bottom: 10px;
-            left: 10px;
+            color: white;
+            font-size: 18px;
+            z-index: 10;
         }
     </style>
 </head>
 <body>
-    <div id="ui">Задание: Найдите золотой ключ!</div>
-    <div id="levelInfo">Уровень: 1</div>
-    <div id="inventory">Инвентарь: пусто</div>
+    <div id="ui">Задание: Найдите золотой ключ на уровне 1</div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-        canvas.width = 800;
-        canvas.height = 600;
 
-        // Игровое состояние
-        const gameState = {
-            level: 1,
-            inventory: [],
-            task: "Найдите золотой ключ",
-            score: 0
-        };
+        // Настройка размера канваса
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const playerImage = new Image();
+        playerImage.src = 'https://i.imgur.com/VXJ4B4f.png'; // Замените ссылку на свой персонаж
+
+        const keyImage = new Image();
+        keyImage.src = 'https://i.imgur.com/6c6RJ0J.png'; // Замените ссылку на ключ
+
+        const doorImage = new Image();
+        doorImage.src = 'https://i.imgur.com/ZrR2aQd.png'; // Замените ссылку на дверь
+
+        const platformImage = new Image();
+        platformImage.src = 'https://i.imgur.com/3YkIznT.png'; // Замените ссылку на платформу
+
+        const coinImage = new Image();
+        coinImage.src = 'https://i.imgur.com/WCqH3cs.png'; // Замените ссылку на монету
 
         const player = {
             x: 50,
-            y: 50,
-            width: 30,
-            height: 30,
-            color: "blue",
-            speed: 3
+            y: canvas.height - 80,
+            width: 50,
+            height: 50,
+            speed: 5,
+            velocityY: 0,
+            jumpPower: -15,
+            gravity: 0.8,
+            onGround: false
         };
 
+        let level = 1;
+        let platforms = [];
+        let coins = [];
         let key = {};
         let door = {};
-        let npc = {};
-        let obstacles = [];
-        let coins = [];
+        let score = 0;
 
         const keys = {};
-        document.addEventListener("keydown", (e) => keys[e.key] = true);
-        document.addEventListener("keyup", (e) => keys[e.key] = false);
+        document.addEventListener('keydown', (e) => (keys[e.key] = true));
+        document.addEventListener('keyup', (e) => (keys[e.key] = false));
 
-        // Функции для генерации объектов
-        function generateLevel(level) {
-            // Обнуляем объекты уровня
-            key = { x: 100 + Math.random() * 600, y: 100 + Math.random() * 400, width: 20, height: 20, color: "gold", collected: false };
-            door = { x: canvas.width - 80, y: canvas.height / 2 - 40, width: 60, height: 80, color: "brown", unlocked: false };
-            npc = { x: 300, y: 100, width: 30, height: 30, color: "green", message: `Добро пожаловать на уровень ${level}! Найдите ключ и откройте дверь.` };
-            obstacles = [];
+        function generateLevel() {
+            // Очистка объектов уровня
+            platforms = [];
             coins = [];
+            key = { x: 700, y: canvas.height - 150, width: 40, height: 40, collected: false };
+            door = { x: canvas.width - 100, y: canvas.height - 100, width: 60, height: 90, unlocked: false };
 
-            // Генерация препятствий
-            for (let i = 0; i < 5 + level; i++) {
-                obstacles.push({ x: Math.random() * 700, y: Math.random() * 500, width: 100, height: 20, color: "red" });
+            // Генерация платформ
+            for (let i = 0; i < 10; i++) {
+                const width = 120;
+                const height = 20;
+                const x = Math.random() * (canvas.width - width);
+                const y = canvas.height - i * 100 - 50;
+                platforms.push({ x, y, width, height });
             }
 
             // Генерация монет
-            for (let i = 0; i < 3 + level; i++) {
-                coins.push({ x: Math.random() * 700, y: Math.random() * 500, width: 15, height: 15, color: "yellow", collected: false });
+            for (let i = 0; i < 5 + level; i++) {
+                const x = Math.random() * (canvas.width - 20);
+                const y = Math.random() * (canvas.height - 20);
+                coins.push({ x, y, width: 20, height: 20, collected: false });
             }
         }
 
-        // Управление
-        function movePlayer() {
-            if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
-            if (keys["ArrowDown"] && player.y + player.height < canvas.height) player.y += player.speed;
-            if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
-            if (keys["ArrowRight"] && player.x + player.width < canvas.width) player.x += player.speed;
+        function drawPlayer() {
+            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+        }
 
-            obstacles.forEach(obstacle => {
-                if (checkCollision(player, obstacle)) {
-                    if (keys["ArrowUp"]) player.y += player.speed;
-                    if (keys["ArrowDown"]) player.y -= player.speed;
-                    if (keys["ArrowLeft"]) player.x += player.speed;
-                    if (keys["ArrowRight"]) player.x -= player.speed;
+        function drawPlatforms() {
+            platforms.forEach((platform) => {
+                ctx.drawImage(platformImage, platform.x, platform.y, platform.width, platform.height);
+            });
+        }
+
+        function drawCoins() {
+            coins.forEach((coin) => {
+                if (!coin.collected) {
+                    ctx.drawImage(coinImage, coin.x, coin.y, coin.width, coin.height);
                 }
             });
         }
 
-        function checkCollision(a, b) {
-            return a.x < b.x + b.width &&
-                   a.x + a.width > b.x &&
-                   a.y < b.y + b.height &&
-                   a.y + a.height > b.y;
+        function drawKey() {
+            if (!key.collected) {
+                ctx.drawImage(keyImage, key.x, key.y, key.width, key.height);
+            }
         }
 
-        // Логика игры
+        function drawDoor() {
+            ctx.drawImage(doorImage, door.x, door.y, door.width, door.height);
+        }
+
+        function movePlayer() {
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            if (player.y + player.height > canvas.height) {
+                player.y = canvas.height - player.height;
+                player.onGround = true;
+                player.velocityY = 0;
+            } else {
+                player.onGround = false;
+            }
+
+            if (keys['ArrowLeft'] && player.x > 0) player.x -= player.speed;
+            if (keys['ArrowRight'] && player.x + player.width < canvas.width) player.x += player.speed;
+
+            platforms.forEach((platform) => {
+                if (
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.velocityY >= 0
+                ) {
+                    player.onGround = true;
+                    player.velocityY = 0;
+                    player.y = platform.y - player.height;
+                }
+            });
+
+            if (keys[' '] && player.onGround) {
+                player.velocityY = player.jumpPower;
+                player.onGround = false;
+            }
+        }
+
+        function collectCoins() {
+            coins.forEach((coin, index) => {
+                if (
+                    player.x < coin.x + coin.width &&
+                    player.x + player.width > coin.x &&
+                    player.y < coin.y + coin.height &&
+                    player.y + player.height > coin.y
+                ) {
+                    coins.splice(index, 1);
+                    score += 10;
+                }
+            });
+        }
+
         function updateGame() {
             movePlayer();
+            collectCoins();
 
             // Сбор ключа
-            if (!key.collected && checkCollision(player, key)) {
+            if (
+                player.x < key.x + key.width &&
+                player.x + player.width > key.x &&
+                player.y < key.y + key.height &&
+                player.y + player.height > key.y
+            ) {
                 key.collected = true;
-                gameState.inventory.push("Золотой ключ");
-                gameState.task = "Отнесите ключ к двери!";
-                updateUI();
             }
-
-            // Сбор монет
-            coins.forEach(coin => {
-                if (!coin.collected && checkCollision(player, coin)) {
-                    coin.collected = true;
-                    gameState.score += 10;
-                }
-            });
 
             // Открытие двери
-            if (key.collected && checkCollision(player, door)) {
-                door.unlocked = true;
-                gameState.task = "Дверь открыта! Переход на следующий уровень.";
-                updateUI();
-                setTimeout(nextLevel, 2000);
-            }
-
-            // Взаимодействие с NPC
-            if (checkCollision(player, npc)) {
-                gameState.task = npc.message;
-                updateUI();
+            if (key.collected && player.x + player.width > door.x && player.y + player.height > door.y) {
+                level++;
+                document.getElementById('ui').textContent = `Задание: Найдите золотой ключ на уровне ${level}`;
+                generateLevel();
             }
         }
 
-        function updateUI() {
-            document.getElementById("ui").textContent = `Задание: ${gameState.task}`;
-            document.getElementById("levelInfo").textContent = `Уровень: ${gameState.level}`;
-            document.getElementById("inventory").textContent = `Инвентарь: ${gameState.inventory.join(", ") || "пусто"}`;
-        }
-
-        // Переход на следующий уровень
-        function nextLevel() {
-            gameState.level++;
-            gameState.inventory = [];
-            gameState.task = `Найдите золотой ключ на уровне ${gameState.level}`;
-            player.x = 50;
-            player.y = 50;
-            generateLevel(gameState.level);
-            updateUI();
-        }
-
-        // Отрисовка объектов
         function drawGame() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Игрок
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // Ключ
-            if (!key.collected) {
-                ctx.fillStyle = key.color;
-                ctx.fillRect(key.x, key.y, key.width, key.height);
-            }
-
-            // Дверь
-            ctx.fillStyle = door.unlocked ? "green" : door.color;
-            ctx.fillRect(door.x, door.y, door.width, door.height);
-
-            // NPC
-            ctx.fillStyle = npc.color;
-            ctx.fillRect(npc.x, npc.y, npc.width, npc.height);
-
-            // Препятствия
-            obstacles.forEach(obstacle => {
-                ctx.fillStyle = obstacle.color;
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            });
-
-            // Монеты
-            coins.forEach(coin => {
-                if (!coin.collected) {
-                    ctx.fillStyle = coin.color;
-                    ctx.fillRect(coin.x, coin.y, coin.width, coin.height);
-                }
-            });
+            drawPlatforms();
+            drawCoins();
+            drawKey();
+            drawDoor();
+            drawPlayer();
         }
 
         function gameLoop() {
@@ -213,9 +211,7 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Начало игры
-        generateLevel(gameState.level);
-        updateUI();
+        generateLevel();
         gameLoop();
     </script>
 </body>
