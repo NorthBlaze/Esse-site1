@@ -142,6 +142,8 @@
         let score = 0;
         let money = 0;
         let cameraY = 0;
+        let lastTime = 0; // Переменная для отслеживания времени
+        let deltaTime = 0; // Время между кадрами (deltaTime)
 
         // Магазин
         const upgradeSpeed = document.getElementById("upgradeSpeed");
@@ -311,11 +313,17 @@
             restartButton.style.display = "none";
 
             // Запускаем игру заново
+            lastTime = performance.now(); // Устанавливаем время на начало
             requestAnimationFrame(gameLoop);
         });
 
         // Главный игровой цикл
         function gameLoop() {
+            const currentTime = performance.now();
+            deltaTime = (currentTime - lastTime) / 1000; // Время между кадрами в секундах
+
+            lastTime = currentTime;
+
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
             updatePlayer();
             updatePlatforms();
@@ -336,8 +344,10 @@
             requestAnimationFrame(gameLoop);
         }
 
+        // Инициализация игры
         createStartingPlatform();
         createPlatforms();
+        lastTime = performance.now();
         gameLoop();
     </script>
 </body>
