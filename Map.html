@@ -3,65 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой долгий путь</title>
-
+    <title>Маршрут на карте</title>
     <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=ваш_API_ключ" type="text/javascript"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            height: 100vh;
-            background-image: url('https://avatars.mds.yandex.net/i?id=72178157bae0b03b759347258aa71be2_l-5008890-images-thumbs&n=13');
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            padding-top: 20px;
         }
         #map {
-            width: 80%;
-            height: 500px;
-            margin: 20px 0;
-        }
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin-top: 20px;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            cursor: pointer;
-            font-size: 16px;
-            border-radius: 5px;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #45a049;
+            width: 100vw;
+            height: 100vh;
         }
     </style>
 </head>
 <body>
-    <h1>Моя карта</h1>
     <div id="map"></div>
-
     <script>
         ymaps.ready(init);
 
         function init() {
-            // Создание карты с центром на указанной точке
+            // Создание карты
             var map = new ymaps.Map("map", {
-                center: [47.992716, 37.914942], // Центр карты (Дом)
-                zoom: 14
+                center: [47.992716, 37.914942], // Центр карты
+                zoom: 13
             });
 
             // Точка начала маршрута
@@ -89,8 +53,13 @@
                     [47.994157, 37.804148]  // ДОННТУ
                 ],
                 params: {
-                    routingMode: 'auto' // Режим авто (можно выбрать 'pedestrian', 'masstransit', etc.)
+                    routingMode: 'auto' // Режим маршрута: авто
                 }
+            }, {
+                wayPointStartIconColor: "#00AAFF", // Цвет иконки начальной точки
+                wayPointFinishIconColor: "#FF0000", // Цвет иконки конечной точки
+                routeStrokeWidth: 4, // Толщина линии маршрута
+                routeActiveStrokeColor: "#808080" // Цвет линии маршрута (серый)
             });
 
             // Добавление маршрута на карту
@@ -105,9 +74,5 @@
             });
         }
     </script>
-
-    <div class="container">
-        <button onclick="window.location.href='index.html'">Вернуться на главную</button>
-    </div>
 </body>
 </html>
