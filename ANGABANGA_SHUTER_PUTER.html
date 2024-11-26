@@ -28,8 +28,6 @@
 <body>
     <div id="ui">Задание: Найдите ключ и откройте дверь</div>
     <canvas id="gameCanvas"></canvas>
-    <audio id="doorSound" src="https://www.soundjay.com/mechanical/door-creak-02.mp3"></audio> <!-- Звук скрипа -->
-
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -62,8 +60,7 @@
             velocityY: 0,
             jumpPower: -15,
             gravity: 0.8,
-            onGround: false,
-            isJumping: false
+            onGround: false
         };
 
         const key = { x: 300, y: 200, width: 30, height: 30, collected: false };
@@ -110,7 +107,7 @@
         }
 
         function drawWalls() {
-            ctx.fillStyle = '#555';
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             walls.forEach((wall) => {
                 ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
             });
@@ -147,9 +144,7 @@
 
             if (keys[' '] && player.onGround) {
                 player.velocityY = player.jumpPower;
-                player.isJumping = true;
                 player.onGround = false;
-                setTimeout(() => (player.isJumping = false), 500);
             }
         }
 
@@ -188,7 +183,6 @@
                 player.y + player.height > door.y
             ) {
                 door.unlocked = true;
-                document.getElementById('doorSound').play(); // Звук двери
                 document.getElementById('ui').textContent = 'Вы прошли уровень!';
             }
         }
