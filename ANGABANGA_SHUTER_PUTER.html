@@ -154,6 +154,21 @@
         // Кнопка перезапуска игры
         const restartButton = document.getElementById("restartButton");
 
+        // Функция для сброса значений игрока и игры
+        function resetGame() {
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            player.speedX = 0;
+            player.speedY = 0;
+            player.isOnGround = false;
+            score = 0;
+            money = 0;
+            cameraY = 0;
+            platforms = [];
+            createStartingPlatform();
+            createPlatforms();
+        }
+
         // Создание начальной платформы
         function createStartingPlatform() {
             platforms.push({
@@ -295,19 +310,7 @@
 
         // Начать игру заново
         restartButton.addEventListener("click", () => {
-            // Сброс всех параметров игрока и игры
-            platforms = [];
-            score = 0;
-            money = 0;
-            player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 60;
-            player.speedX = 0; // Сброс скорости
-            player.speedY = 0; // Сброс вертикальной скорости
-            cameraY = 0;
-
-            createStartingPlatform();
-            createPlatforms();
-
+            resetGame();
             // Скрываем элементы "Game Over" и кнопку перезапуска
             document.getElementById("gameOver").style.display = "none";
             restartButton.style.display = "none";
@@ -345,8 +348,7 @@
         }
 
         // Инициализация игры
-        createStartingPlatform();
-        createPlatforms();
+        resetGame();
         lastTime = performance.now();
         gameLoop();
     </script>
