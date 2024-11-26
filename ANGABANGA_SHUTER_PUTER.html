@@ -16,7 +16,7 @@
             margin: auto;
             background: #87CEEB;
         }
-        #score, #money, #shop {
+        #score, #money, #lives, #shop {
             position: absolute;
             font-size: 24px;
             color: #ffffff;
@@ -27,6 +27,10 @@
         }
         #money {
             top: 40px;
+            left: 10px;
+        }
+        #lives {
+            top: 70px;
             left: 10px;
         }
         #shop {
@@ -55,9 +59,9 @@
             cursor: not-allowed;
         }
         .button-link {
-            position: fixed; /* Фиксируем кнопку в левом верхнем углу */
-            bottom: 10px;       /* Отступ снизу */
-            left: 10px;      /* Отступ слева */
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
             padding: 10px 20px;
             font-size: 16px;
             color: white;
@@ -70,17 +74,18 @@
         .button-link:hover {
             background-color: #45a049;
         }
-
     </style>
 </head>
 <body>
     <div id="score">Очки: 0</div>
     <div id="money">Монеты: 0</div>
+    <div id="lives">Жизни: 3</div>
     <div id="shop">
         <h3>Магазин</h3>
         <button id="upgradeSpeed" class="shop-item">Скорость (79 монет)</button>
         <button id="upgradeJump" class="shop-item">Прыжок (89 монет)</button>
         <button id="extraLife" class="shop-item">Возвращение к жизни :D (1099 монет)</button>
+        <button id="upgradeGravity" class="shop-item">Уменьшить гравитацию (129 монет)</button>
     </div>
     <canvas id="gameCanvas"></canvas>
 
@@ -106,6 +111,7 @@
             jumpPower: -10,
             speedMultiplier: 1,
             jumpMultiplier: 1,
+            gravityMultiplier: 1,
             isOnGround: false,
         };
 
@@ -114,11 +120,13 @@
         let score = 0;
         let money = 0;
         let cameraY = 0;
+        let lives = 3;
 
         // Магазин
         const upgradeSpeed = document.getElementById("upgradeSpeed");
         const upgradeJump = document.getElementById("upgradeJump");
         const extraLife = document.getElementById("extraLife");
+        const upgradeGravity = document.getElementById("upgradeGravity");
 
         // Создание начальной платформы
         function createStartingPlatform() {
@@ -181,6 +189,14 @@
         extraLife.addEventListener("click", () => {
             if (money >= 1099) {
                 money -= 1099;
+                lives += 1;
+            }
+        });
+
+        upgradeGravity.addEventListener("click", () => {
+            if (money >= 129) {
+                money -= 129;
+                player.gravityMultiplier -= 0.1;
             }
         });
 
@@ -204,7 +220,7 @@
         function updatePlayer() {
             player.x += player.speedX;
             player.y += player.speedY;
-            player.speedY += player.gravity;
+            player.speedY += player.gravity * player.gravityMultiplier;
 
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
@@ -233,7 +249,21 @@
             if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
 
             if (player.y - cameraY > HEIGHT) {
-                newLevel();
+                loseLife();
+            }
+        }
+
+        // Утеря жизни
+        function loseLife() {
+            if (lives > 1) {
+                lives--;
+                player.x = WIDTH / 2 - 15;
+                player.y = HEIGHT - 60;
+                player.speedY = 0;
+                cameraY = 0;
+            } else {
+                alert("Game Over!");
+                resetGame();
             }
         }
 
@@ -243,6 +273,18 @@
             score = 0;
             player.speedMultiplier = 1;
             player.jumpMultiplier = 1;
+            createStartingPlatform();
+            createPlatforms();
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            player.speedY = 0;
+            cameraY = 0;
+        }
+
+        function resetGame() {
+            lives = 3;
+            score = 0;
+            money = 0;
             createStartingPlatform();
             createPlatforms();
             player.x = WIDTH / 2 - 15;
@@ -267,6 +309,7 @@
 
             document.getElementById("score").textContent = `Очки: ${score}`;
             document.getElementById("money").textContent = `Мани: ${money}`;
+            document.getElementById("lives").textContent = `Жизни: ${lives}`;
 
             requestAnimationFrame(gameLoop);
         }
