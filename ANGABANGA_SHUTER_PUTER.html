@@ -302,23 +302,25 @@
         }
 
         // Начать игру заново
-        restartButton.addEventListener("click", () => {
-            platforms = [];
-            score = 0;
-            money = 0;
-            player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 60;
-            cameraY = 0;
+restartButton.addEventListener("click", () => {
+    platforms = [];
+    score = 0;
+    money = 0;
+    player.x = WIDTH / 2 - 15;
+    player.y = HEIGHT - 60;
+    player.speedY = 0; // Сброс вертикальной скорости
+    cameraY = 0;
 
-            createStartingPlatform();
-            createPlatforms();
+    createStartingPlatform();
+    createPlatforms();
 
-            document.getElementById("gameOver").style.display = "none";
-            restartButton.style.display = "none";
+    // Скрываем элементы "Game Over" и кнопку перезапуска
+    document.getElementById("gameOver").style.display = "none";
+    restartButton.style.display = "none";
 
-            gameLoop();
-        });
-
+    // Запускаем игру заново
+    requestAnimationFrame(gameLoop);
+});
         createStartingPlatform();
         createPlatforms();
         gameLoop();
