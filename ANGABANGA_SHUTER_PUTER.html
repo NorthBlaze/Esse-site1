@@ -54,22 +54,6 @@
             background: gray;
             cursor: not-allowed;
         }
-        .button-link {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            color: white;
-            background-color: #4CAF50;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .button-link:hover {
-            background-color: #45a049;
-        }
         #gameOver {
             position: absolute;
             top: 50%;
@@ -152,6 +136,7 @@
             money = 0;
             cameraY = 0;
 
+            // Сброс параметров платформ
             platforms = [];
             createStartingPlatform();
             createPlatforms();
