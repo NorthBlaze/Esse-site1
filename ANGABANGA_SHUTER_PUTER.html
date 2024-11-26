@@ -1,188 +1,280 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Квестовая игра</title>
+    <title>Доберись до вершины :D</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #000;
+            background-color: #87CEEB;
+            font-family: Arial, sans-serif;
         }
         canvas {
             display: block;
             margin: auto;
+            background: #87CEEB;
         }
-        #ui {
+        #score, #money, #shop {
             position: absolute;
+            font-size: 24px;
+            color: #ffffff;
+        }
+        #score {
             top: 10px;
             left: 10px;
-            color: white;
-            font-size: 18px;
-            z-index: 10;
         }
+        #money {
+            top: 40px;
+            left: 10px;
+        }
+        #shop {
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            font-size: 16px;
+        }
+        .shop-item {
+            display: block;
+            margin: 5px 0;
+            padding: 5px 10px;
+            background: green;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            font-size: 14px;
+        }
+        .shop-item.disabled {
+            background: gray;
+            cursor: not-allowed;
+        }
+        .button-link {
+            position: fixed; /* Фиксируем кнопку в левом верхнем углу */
+            bottom: 10px;       /* Отступ снизу */
+            left: 10px;      /* Отступ слева */
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #4CAF50;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .button-link:hover {
+            background-color: #45a049;
+        }
+
     </style>
 </head>
 <body>
-    <div id="ui">Задание: Найдите ключ и откройте дверь</div>
+    <div id="score">Очки: 0</div>
+    <div id="money">Монеты: 0</div>
+    <div id="shop">
+        <h3>Магазин</h3>
+        <button id="upgradeSpeed" class="shop-item">Скорость (79 монет)</button>
+        <button id="upgradeJump" class="shop-item">Прыжок (89 монет)</button>
+        <button id="extraLife" class="shop-item">Возвращение к жизни :D (1099 монет)</button>
+    </div>
     <canvas id="gameCanvas"></canvas>
+
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
 
-        // Настройка размера канваса
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const WIDTH = 400;
+        const HEIGHT = 600;
+        canvas.width = WIDTH;
+        canvas.height = HEIGHT;
 
-        // Изображения
-        const mapImage = new Image();
-        mapImage.src = 'https://avatars.mds.yandex.net/i?id=2917a8cafce4b4675ee034a9f9f618df_l-5876669-images-thumbs&n=13';
-
-        const playerImage = new Image();
-        playerImage.src = 'https://i.imgur.com/WB2DxTT.png'; // Прозрачный персонаж
-
-        const chestImage = new Image();
-        chestImage.src = 'https://i.imgur.com/9EZ7qqT.png'; // Сундук
-
-        const keyImage = new Image();
-        keyImage.src = 'https://art.pixilart.com/82d984fcd46cafb.gif'; // Ключ
-
-        const doorImage = new Image();
-        doorImage.src = 'https://avatars.mds.yandex.net/i?id=e38a11e37cb4da1813c466d9b7adecdc_l-10551030-images-thumbs&n=13'; // Дверь
-
-        // Персонаж
+        // Игрок
         const player = {
-            x: 100,
-            y: 100,
-            width: 40,
-            height: 40,
-            speed: 3
+            x: WIDTH / 2 - 15,
+            y: HEIGHT - 60,
+            width: 30,
+            height: 30,
+            color: "red",
+            speedX: 0,
+            speedY: 0,
+            gravity: 0.5,
+            jumpPower: -10,
+            speedMultiplier: 1,
+            jumpMultiplier: 1,
+            isOnGround: false,
         };
 
-        // Объекты игры
-        const chests = [];
-        const walls = [
-            { x: 50, y: 200, width: 100, height: 50 }, // Пример стены
-            { x: 300, y: 400, width: 200, height: 100 }
-        ];
-        const door = { x: 600, y: 400, width: 50, height: 70, unlocked: false };
+        // Игровые переменные
+        let platforms = [];
+        let score = 0;
+        let money = 0;
+        let cameraY = 0;
 
-        let hasKey = false;
+        // Магазин
+        const upgradeSpeed = document.getElementById("upgradeSpeed");
+        const upgradeJump = document.getElementById("upgradeJump");
+        const extraLife = document.getElementById("extraLife");
 
-        // Генерация сундуков
-        for (let i = 0; i < 5; i++) {
-            chests.push({
-                x: Math.random() * (canvas.width - 50),
-                y: Math.random() * (canvas.height - 50),
-                width: 40,
-                height: 40,
-                containsKey: Math.random() > 0.7 // С шансом 30% в сундуке будет ключ
+        // Создание начальной платформы
+        function createStartingPlatform() {
+            platforms.push({
+                x: WIDTH / 2 - 50,
+                y: HEIGHT - 30,
+                width: 100,
+                height: 10,
+                color: "green",
+                dx: 0
             });
         }
 
-        const keys = {};
-        document.addEventListener('keydown', (e) => (keys[e.key] = true));
-        document.addEventListener('keyup', (e) => (keys[e.key] = false));
-
-        function drawMap() {
-            ctx.drawImage(mapImage, 0, 0, canvas.width, canvas.height);
-        }
-
-        function drawPlayer() {
-            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-        }
-
-        function drawWalls() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-            walls.forEach((wall) => {
-                ctx.fillRect(wall.x, wall.y, wall.width, wall.height);
-            });
-        }
-
-        function drawDoor() {
-            ctx.drawImage(doorImage, door.x, door.y, door.width, door.height);
-        }
-
-        function drawChests() {
-            chests.forEach((chest) => {
-                ctx.drawImage(chestImage, chest.x, chest.y, chest.width, chest.height);
-            });
-        }
-
-        function movePlayer() {
-            if (keys['ArrowUp'] && !isColliding(player.x, player.y - player.speed)) player.y -= player.speed;
-            if (keys['ArrowDown'] && !isColliding(player.x, player.y + player.speed)) player.y += player.speed;
-            if (keys['ArrowLeft'] && !isColliding(player.x - player.speed, player.y)) player.x -= player.speed;
-            if (keys['ArrowRight'] && !isColliding(player.x + player.speed, player.y)) player.x += player.speed;
-        }
-
-        function isColliding(nextX, nextY) {
-            // Проверка столкновений с границами карты
-            if (nextX < 0 || nextX + player.width > canvas.width || nextY < 0 || nextY + player.height > canvas.height)
-                return true;
-
-            // Проверка столкновений со стенами
-            return walls.some(
-                (wall) =>
-                    nextX < wall.x + wall.width &&
-                    nextX + player.width > wall.x &&
-                    nextY < wall.y + wall.height &&
-                    nextY + player.height > wall.y
-            );
-        }
-
-        function checkInteractions() {
-            // Проверка взаимодействия с сундуками
-            chests.forEach((chest, index) => {
-                if (
-                    player.x < chest.x + chest.width &&
-                    player.x + player.width > chest.x &&
-                    player.y < chest.y + chest.height &&
-                    player.y + player.height > chest.y
-                ) {
-                    if (chest.containsKey) {
-                        hasKey = true;
-                        document.getElementById('ui').textContent = 'Вы нашли ключ! Теперь откройте дверь.';
-                    } else {
-                        document.getElementById('ui').textContent = 'Сундук пуст.';
-                    }
-                    chests.splice(index, 1); // Удаляем сундук
-                }
-            });
-
-            // Проверка взаимодействия с дверью
-            if (
-                hasKey &&
-                player.x < door.x + door.width &&
-                player.x + player.width > door.x &&
-                player.y < door.y + door.height &&
-                player.y + player.height > door.y
-            ) {
-                door.unlocked = true;
-                document.getElementById('ui').textContent = 'Дверь открыта! Вы прошли уровень.';
+        // Создание платформ
+        function createPlatforms(count = 20) {
+            const gap = 100;
+            for (let i = 0; i < count; i++) {
+                const width = Math.random() * 50 + 50;
+                const x = Math.random() * (WIDTH - width);
+                const y = platforms.length > 0 ? platforms[platforms.length - 1].y - gap : HEIGHT - 30 - i * gap;
+                platforms.push({ x, y, width, height: 10, color: "green", dx: 0 });
             }
         }
 
-        function drawGame() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawMap();
-            drawWalls();
-            drawDoor();
-            drawChests();
-            drawPlayer();
+        function addPlatform() {
+            const width = Math.random() * 50 + 50;
+            const x = Math.random() * (WIDTH - width);
+            const y = platforms[platforms.length - 1].y - 100;
+            const moving = Math.random() > 0.7;
+            const dx = moving ? (Math.random() > 0.5 ? 1 : -1) * 1.5 : 0;
+            platforms.push({ x, y, width, height: 10, color: "green", dx });
+        }
+
+        // Управление
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowLeft") player.speedX = -5 * player.speedMultiplier;
+            if (e.key === "ArrowRight") player.speedX = 5 * player.speedMultiplier;
+            if (e.key === " " && player.isOnGround) player.speedY = player.jumpPower * player.jumpMultiplier;
+        });
+
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") player.speedX = 0;
+        });
+
+        // Магазин
+        upgradeSpeed.addEventListener("click", () => {
+            if (money >= 79) {
+                money -= 79;
+                player.speedMultiplier += 0.2;
+            }
+        });
+
+        upgradeJump.addEventListener("click", () => {
+            if (money >= 89) {
+                money -= 89;
+                player.jumpMultiplier += 0.4;
+            }
+        });
+
+        extraLife.addEventListener("click", () => {
+            if (money >= 1099) {
+                money -= 1099;
+            }
+        });
+
+        // Обновление платформ
+        function updatePlatforms() {
+            platforms.forEach(platform => {
+                platform.x += platform.dx;
+
+                if (platform.x < 0 || platform.x + platform.width > WIDTH) platform.dx *= -1;
+            });
+
+            platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
+
+            // Генерация новых платформ, если их мало
+            if (platforms.length < 20) {
+                createPlatforms(5);
+            }
+        }
+
+        // Обновление игрока
+        function updatePlayer() {
+            player.x += player.speedX;
+            player.y += player.speedY;
+            player.speedY += player.gravity;
+
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
+
+            player.isOnGround = false;
+            platforms.forEach(platform => {
+                if (
+                    player.y + player.height >= platform.y &&
+                    player.y + player.height <= platform.y + platform.height &&
+                    player.x + player.width > platform.x &&
+                    player.x < platform.x + platform.width &&
+                    player.speedY >= 0
+                ) {
+                    player.speedY = 0;
+                    player.y = platform.y - player.height;
+                    player.isOnGround = true;
+
+                    if (platform.color === "green") {
+                        score++;
+                        money += 2;
+                        platform.color = "gray";
+                    }
+                }
+            });
+
+            if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
+
+            if (player.y - cameraY > HEIGHT) {
+                newLevel();
+            }
+        }
+
+        // Создание нового уровня
+        function newLevel() {
+            platforms = [];
+            score = 0;
+            player.speedMultiplier = 1;
+            player.jumpMultiplier = 1;
+            createStartingPlatform();
+            createPlatforms();
+            player.x = WIDTH / 2 - 15;
+            player.y = HEIGHT - 60;
+            player.speedY = 0;
+            cameraY = 0;
         }
 
         function gameLoop() {
-            movePlayer();
-            checkInteractions();
-            drawGame();
+            ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+            updatePlatforms();
+            updatePlayer();
+
+            platforms.forEach(platform => {
+                ctx.fillStyle = platform.color;
+                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
+            });
+
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
+
+            document.getElementById("score").textContent = `Очки: ${score}`;
+            document.getElementById("money").textContent = `Мани: ${money}`;
+
             requestAnimationFrame(gameLoop);
         }
 
-        mapImage.onload = () => {
-            gameLoop();
-        };
+        createStartingPlatform();
+        createPlatforms();
+        gameLoop();
     </script>
+    <a href="index.html" class="button-link">Вернуться на главную</a>
 </body>
 </html>
