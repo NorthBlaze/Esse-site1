@@ -146,7 +146,8 @@
 <!-- Магазин -->
 <div class="shop hidden" id="shop">
     <h3>Магазин</h3>
-    <button class="shop-item" id="buyExtraPaddle">Купить дополнительную платформу (100 монет)</button>
+    <button class="shop-item" id="buyExtraPaddle">Купить дополнительную платформу (1299 монет)</button>
+    <button class="shop-item" id="buyPaddleColor">Изменить цвет платформы (100 монет)</button>
     <p id="coins">Монеты: 0</p>
 </div>
 
@@ -164,6 +165,7 @@
     let ballSpeedMultiplier = 1;
     let difficulty = "medium"; // Средняя сложность по умолчанию
     let extraPaddleCount = 0;
+    let paddleColor = "#0095DD"; // Начальный цвет платформы
 
     // Фон и размеры canvas
     function resizeCanvas() {
@@ -358,16 +360,20 @@
         }
 
         // Рисуем платформу
-        ctx.fillStyle = "#0095DD";
+        ctx.fillStyle = paddleColor;
         ctx.fillRect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
 
-        // Управление движением платформы
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'ArrowLeft' && paddleX > 0) {
-                paddleX -= paddleSpeed;  // Двигаем влево
-            } else if (e.key === 'ArrowRight' && paddleX < canvasWidth - paddleWidth) {
-                paddleX += paddleSpeed;  // Двигаем вправо
-            }
+        // Рисуем вторую платформу, если куплена
+        if (extraPaddleCount > 0) {
+            ctx.fillStyle = "#FF5733"; // Цвет второй платформы
+            ctx.fillRect(paddleX + paddleWidth + 10, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
+        }
+
+        // Управление движением платформы с помощью курсора
+        document.addEventListener('mousemove', (e) => {
+            paddleX = e.clientX - paddleWidth / 2;
+            if (paddleX < 0) paddleX = 0;
+            if (paddleX > canvasWidth - paddleWidth) paddleX = canvasWidth - paddleWidth;
         });
 
         // Продолжаем игровой цикл
@@ -379,11 +385,33 @@
     document.getElementById("easyBtn").addEventListener("click", () => setDifficulty("easy"));
     document.getElementById("mediumBtn").addEventListener("click", () => setDifficulty("medium"));
     document.getElementById("hardBtn").addEventListener("click", () => setDifficulty("hard"));
-    
+
     // Перезапуск игры
     document.getElementById("restartBtn").addEventListener("click", () => {
         gameOver = false;
         startGameGame();
+    });
+
+    // Покупка второй платформы
+    document.getElementById("buyExtraPaddle").addEventListener("click", () => {
+        if (coins >= 1299) {
+            extraPaddleCount++; // Увеличиваем количество платформ
+            coins -= 1299; // Снимаем монеты
+            document.getElementById("coins").textContent = `Монеты: ${coins}`;
+        } else {
+            alert("Недостаточно монет!");
+        }
+    });
+
+    // Покупка изменения цвета платформы
+    document.getElementById("buyPaddleColor").addEventListener("click", () => {
+        if (coins >= 100) {
+            paddleColor = `#${Math.floor(Math.random()*16777215).toString(16)}`; // Рандомный цвет
+            coins -= 100;
+            document.getElementById("coins").textContent = `Монеты: ${coins}`;
+        } else {
+            alert("Недостаточно монет!");
+        }
     });
 
 </script>
