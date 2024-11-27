@@ -3,134 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Стратегия на JavaScript</title>
+    <title>Список элементов</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
+            margin-top: 50px;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
             background-color: #f0f0f0;
-        }
-
-        #game-container {
-            margin: 20px auto;
-            width: 600px;
-            height: 600px;
-            border: 3px solid #333;
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(10, 1fr);
-            gap: 1px;
-        }
-
-        .cell {
-            width: 100%;
-            height: 100%;
-            background-color: lightgray;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border: 1px solid #ddd;
-        }
-
-        .player1 {
-            background-color: lightblue;
-        }
-
-        .player2 {
-            background-color: lightcoral;
-        }
-
-        .selected {
-            border: 2px solid black;
-        }
-
-        .controls {
-            margin-top: 20px;
-        }
-
-        button {
-            padding: 10px 20px;
-            margin: 5px;
-            font-size: 16px;
+            margin: 10px;
+            padding: 10px;
+            border-radius: 5px;
             cursor: pointer;
+        }
+        li:hover {
+            background-color: #d0e0f0;
+        }
+        .selected {
+            background-color: #c0f0c0;
+        }
+        #selected-item {
+            margin-top: 20px;
+            font-size: 20px;
+            color: green;
         }
     </style>
 </head>
 <body>
 
-    <h1>Стратегия: Захват территорий</h1>
-    <div id="game-container"></div>
+    <h1>Выберите элемент из списка</h1>
 
-    <div class="controls">
-        <button id="end-turn">Конец хода</button>
-        <div id="turn-info">Ход игрока 1</div>
-    </div>
+    <ul id="item-list">
+        <li>Элемент 1</li>
+        <li>Элемент 2</li>
+        <li>Элемент 3</li>
+        <li>Элемент 4</li>
+        <li>Элемент 5</li>
+    </ul>
+
+    <div id="selected-item"></div>
 
     <script>
-        const boardSize = 10; // Размер поля 10x10
-        const cells = [];
-        let selectedCell = null;
-        let currentPlayer = 1;
+        // Получаем все элементы списка
+        const items = document.querySelectorAll('#item-list li');
+        const selectedItemDiv = document.getElementById('selected-item');
 
-        // Инициализация поля
-        const gameContainer = document.getElementById('game-container');
-        const turnInfo = document.getElementById('turn-info');
-        const endTurnButton = document.getElementById('end-turn');
-
-        function createBoard() {
-            for (let i = 0; i < boardSize * boardSize; i++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.dataset.index = i;
-
-                // Устанавливаем начальные позиции для игроков
-                if (i < boardSize) { // Игрок 1 на верхней строке
-                    cell.classList.add('player1');
-                } else if (i >= boardSize * (boardSize - 1)) { // Игрок 2 на нижней строке
-                    cell.classList.add('player2');
-                }
-
-                // Добавляем обработчик клика для выбора клетки
-                cell.addEventListener('click', () => handleCellClick(cell));
-                gameContainer.appendChild(cell);
-                cells.push(cell);
-            }
-        }
-
-        // Обработка клика по клетке
-        function handleCellClick(cell) {
-            const index = cell.dataset.index;
-            const playerClass = currentPlayer === 1 ? 'player1' : 'player2';
-
-            if (selectedCell) {
-                // Если клетка с войском выбрана, перемещаем войско на новую клетку
-                if (!cell.classList.contains('player1') && !cell.classList.contains('player2')) {
-                    // Перемещаем войско на пустую клетку
-                    selectedCell.classList.remove(playerClass, 'selected');
-                    cell.classList.add(playerClass);
-                    selectedCell = null;
-                    changeTurn();
-                }
-            } else {
-                // Если клетка выбрана, то выделяем её
-                if (cell.classList.contains(playerClass)) {
-                    selectedCell = cell;
-                    cell.classList.add('selected');
-                }
-            }
-        }
-
-        // Смена хода
-        function changeTurn() {
-            currentPlayer = currentPlayer === 1 ? 2 : 1;
-            turnInfo.textContent = Ход игрока ${currentPlayer};
-        }
-
-        // Событие для завершения хода
-        endTurnButton.addEventListener('click', changeTurn);
-
-        // Инициализация игры
-        createBoard();
+        // Добавляем обработчик событий для каждого элемента списка
+        items.forEach(item => {
+            item.addEventListener('click', () => {
+                // Убираем класс "selected" у всех элементов
+                items.forEach(i => i.classList.remove('selected'));
+                // Добавляем класс "selected" к выбранному элементу
+                item.classList.add('selected');
+                
+                // Отображаем выбранный элемент
+                selectedItemDiv.textContent = Вы выбрали: ${item.textContent};
+            });
+        });
     </script>
-    </body>
+
+</body>
 </html>
