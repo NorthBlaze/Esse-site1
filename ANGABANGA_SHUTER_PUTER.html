@@ -113,6 +113,23 @@
         .hidden {
             display: none;
         }
+        .shop-message {
+            color: red;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        .back-button {
+            background-color: #e74c3c;
+            color: #fff;
+            padding: 10px 20px;
+            font-size: 18px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .back-button:hover {
+            background-color: #c0392b;
+        }
     </style>
 </head>
 <body>
@@ -149,6 +166,8 @@
     <button class="shop-item" id="buyExtraPaddle">Купить дополнительную платформу (1299 монет)</button>
     <button class="shop-item" id="buyPaddleColor">Изменить цвет платформы (100 монет)</button>
     <p id="coins">Монеты: 0</p>
+    <div id="shopMessage" class="shop-message hidden"></div>
+    <button class="back-button" id="backToMenuBtn">Вернуться в меню</button>
 </div>
 
 <script>
@@ -159,7 +178,6 @@
     let paddleX, paddleWidth = 100, paddleHeight = 20, paddleSpeed = 6;
     let ballX, ballY, ballSpeedX, ballSpeedY, ballRadius = 10;
     let bricks = [];
-    let bonusInterval = 100;
     let score = 0, coins = 0;
     let gameOver = false;
     let ballSpeedMultiplier = 1;
@@ -229,28 +247,24 @@
         // Пересоздаем блоки
         createBricks();
 
-        // Очищаем список бонусов
-        bonuses = [];
-
-        // Скрываем сообщение о конце игры
-        document.getElementById("gameOverMessage").classList.add("hidden");
-
-        // Запуск основного игрового цикла
+        // Запускаем основной игровой цикл
         gameLoop();
     }
 
     // Главный игровой цикл
     function gameLoop() {
-        if (gameOver) return; // Если игра окончена, не продолжаем
+        if (gameOver) {
+            return;
+        }
 
         // Очистка экрана
-        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Двигаем мяч
         ballX += ballSpeedX;
         ballY += ballSpeedY;
 
-        // Проверка на столкновение с стенами
+        // Столкновение с границами
         if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
             ballSpeedX = -ballSpeedX;
         }
@@ -259,28 +273,26 @@
             ballSpeedY = -ballSpeedY;
         } else if (ballY + ballRadius > canvasHeight) {
             if (ballX > paddleX && ballX < paddleX + paddleWidth) {
-                // Столкновение с платформой
                 ballSpeedY = -ballSpeedY;
                 const hitPosition = (ballX - paddleX) / paddleWidth;
-                ballSpeedX = (hitPosition - 0.5) * 10; // Изменение угла отскока
-                score++;  // Увеличиваем очки
-                coins++;  // Увеличиваем монеты
+                ballSpeedX = (hitPosition - 0.5) * 10;
+                score++; 
+                coins++;
                 document.getElementById("score").textContent = score;
                 document.getElementById("coins").textContent = `Монеты: ${coins}`;
             } else {
-                // Если мяч выходит за платформу
                 gameOver = true;
                 document.getElementById("gameOverMessage").classList.remove("hidden");
                 return;
             }
         }
 
-        // Двигаем платформу
-        if (rightPressed && paddleX < canvasWidth - paddleWidth) {
-            paddleX += paddleSpeed;
-        } else if (leftPressed && paddleX > 0) {
-            paddleX -= paddleSpeed;
-        }
+        // Управление платформой с помощью курсора
+        canvas.addEventListener("mousemove", (e) => {
+            paddleX = e.clientX - paddleWidth / 2;
+            if (paddleX < 0) paddleX = 0;
+            if (paddleX > canvasWidth - paddleWidth) paddleX = canvasWidth - paddleWidth;
+        });
 
         // Рисуем платформу
         ctx.beginPath();
@@ -299,11 +311,20 @@
         // Рисуем блоки
         for (let row = 0; row < 5; row++) {
             for (let col = 0; col < Math.floor((canvasWidth - brickOffsetLeft * 2) / (brickWidth + brickPadding)); col++) {
-                if (bricks[row][col].status === 1) {
+                let brick = bricks[row][col];
+                if (brick.status === 1) {
                     let brickX = brickOffsetLeft + col * (brickWidth + brickPadding);
                     let brickY = brickOffsetTop + row * (brickHeight + brickPadding);
-                    bricks[row][col].x = brickX;
-                    bricks[row][col].y = brickY;
+
+                    // Проверка на столкновение с мячом
+                    if (ballX > brickX && ballX < brickX + brickWidth && ballY - ballRadius < brickY + brickHeight && ballY + ballRadius > brickY) {
+                        ballSpeedY = -ballSpeedY;
+                        brick.status = 0; // Убираем блок
+                        score += 10;  // Добавляем очки
+                        coins += 5;  // Добавляем монеты
+                        document.getElementById("score").textContent = score;
+                        document.getElementById("coins").textContent = `Монеты: ${coins}`;
+                    }
 
                     ctx.beginPath();
                     ctx.rect(brickX, brickY, brickWidth, brickHeight);
@@ -314,46 +335,53 @@
             }
         }
 
-        // Запуск следующего кадра
+        // Запускаем следующий кадр
         requestAnimationFrame(gameLoop);
     }
-
-    // Управление платформой
-    let rightPressed = false;
-    let leftPressed = false;
-
-    document.addEventListener("keydown", keyDownHandler, false);
-    document.addEventListener("keyup", keyUpHandler, false);
-
-    function keyDownHandler(e) {
-        if (e.key === "Right" || e.key === "ArrowRight") {
-            rightPressed = true;
-        } else if (e.key === "Left" || e.key === "ArrowLeft") {
-            leftPressed = true;
-        }
-    }
-
-    function keyUpHandler(e) {
-        if (e.key === "Right" || e.key === "ArrowRight") {
-            rightPressed = false;
-        } else if (e.key === "Left" || e.key === "ArrowLeft") {
-            leftPressed = false;
-        }
-    }
-
-    // Запуск игры
-    document.getElementById("startBtn").addEventListener("click", startGame);
-    document.getElementById("easyBtn").addEventListener("click", () => setDifficulty("easy"));
-    document.getElementById("mediumBtn").addEventListener("click", () => setDifficulty("medium"));
-    document.getElementById("hardBtn").addEventListener("click", () => setDifficulty("hard"));
-    document.getElementById("restartBtn").addEventListener("click", startGameGame);
 
     // Магазин
     document.getElementById("shopBtn").addEventListener("click", function() {
         document.getElementById("shop").classList.remove("hidden");
         document.getElementById("mainMenu").classList.add("hidden");
     });
-</script>
 
+    // Возврат в меню
+    document.getElementById("backToMenuBtn").addEventListener("click", function() {
+        document.getElementById("shop").classList.add("hidden");
+        document.getElementById("mainMenu").classList.remove("hidden");
+    });
+
+    // Проверка монет и покупка
+    document.getElementById("buyExtraPaddle").addEventListener("click", function() {
+        if (coins >= 1299) {
+            coins -= 1299;
+            extraPaddleCount++;
+            document.getElementById("coins").textContent = `Монеты: ${coins}`;
+        } else {
+            document.getElementById("shopMessage").classList.remove("hidden");
+            document.getElementById("shopMessage").textContent = "Недостаточно монет!";
+        }
+    });
+
+    document.getElementById("buyPaddleColor").addEventListener("click", function() {
+        if (coins >= 100) {
+            coins -= 100;
+            paddleColor = "#e74c3c"; // Меняем цвет на красный
+            document.getElementById("coins").textContent = `Монеты: ${coins}`;
+        } else {
+            document.getElementById("shopMessage").classList.remove("hidden");
+            document.getElementById("shopMessage").textContent = "Недостаточно монет!";
+        }
+    });
+
+    // Старт игры
+    document.getElementById("startBtn").addEventListener("click", startGame);
+    document.getElementById("easyBtn").addEventListener("click", () => setDifficulty("easy"));
+    document.getElementById("mediumBtn").addEventListener("click", () => setDifficulty("medium"));
+    document.getElementById("hardBtn").addEventListener("click", () => setDifficulty("hard"));
+
+    // Запуск игры
+    document.getElementById("restartBtn").addEventListener("click", startGameGame);
+</script>
 </body>
 </html>
