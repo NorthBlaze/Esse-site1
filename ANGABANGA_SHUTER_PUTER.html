@@ -3,288 +3,134 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Breakout Game</title>
+    <title>Стратегия на JavaScript</title>
     <style>
         body {
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
             font-family: Arial, sans-serif;
-            height: 100%;
-            background-image: url('ВАШ_УРЛ_ИЗОБРАЖЕНИЯ'); /* Вставьте свой URL изображения */
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
-
-        canvas {
-            display: block;
-            margin: 0 auto;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        #menu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             text-align: center;
-            z-index: 100;
+            background-color: #f0f0f0;
         }
 
-        #menu button {
-            padding: 20px 40px;
-            font-size: 24px;
-            cursor: pointer;
-            margin: 20px;
-            background-color: #3498db;
-            border: none;
-            color: white;
-            border-radius: 10px;
-            width: 250px;
+        #game-container {
+            margin: 20px auto;
+            width: 600px;
+            height: 600px;
+            border: 3px solid #333;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-template-rows: repeat(10, 1fr);
+            gap: 1px;
         }
 
-        #menu button:hover {
-            background-color: #2980b9;
+        .cell {
+            width: 100%;
+            height: 100%;
+            background-color: lightgray;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid #ddd;
         }
 
-        #game {
-            display: none;
-            position: relative;
-            z-index: 50;
+        .player1 {
+            background-color: lightblue;
         }
 
-        #score, #coins {
-            font-size: 20px;
-            margin-top: 10px;
-            color: white;
+        .player2 {
+            background-color: lightcoral;
         }
 
-        #gameOverMessage {
-            display: none;
-            font-size: 24px;
-            color: red;
+        .selected {
+            border: 2px solid black;
+        }
+
+        .controls {
             margin-top: 20px;
         }
 
-        #gameOverMessage button {
-            font-size: 18px;
+        button {
             padding: 10px 20px;
-            margin-top: 10px;
-            cursor: pointer;
-        }
-
-        #backToMenu {
-            position: absolute;
-            top: 10px;
-            right: 10px;
+            margin: 5px;
             font-size: 16px;
-            background-color: #e74c3c;
-            color: white;
-            padding: 10px;
-            border: none;
             cursor: pointer;
-            border-radius: 5px;
         }
-
-        #backToMenu:hover {
-            background-color: #c0392b;
-        }
-
     </style>
 </head>
 <body>
 
-    <!-- Меню -->
-    <div id="menu">
-        <button id="playButton">Играть</button>
-    </div>
+    <h1>Стратегия: Захват территорий</h1>
+    <div id="game-container"></div>
 
-    <div id="game">
-        <canvas id="gameCanvas"></canvas>
-        <div id="score">Очки: 0</div>
-        <div id="coins">Монеты: 0</div>
-        <div id="gameOverMessage">
-            Игра окончена! <button id="restartButton">Начать заново</button>
-        </div>
-        <button id="backToMenu" style="display:none;">Вернуться в меню</button>
+    <div class="controls">
+        <button id="end-turn">Конец хода</button>
+        <div id="turn-info">Ход игрока 1</div>
     </div>
 
     <script>
-        let canvas = document.getElementById("gameCanvas");
-        let ctx = canvas.getContext("2d");
+        const boardSize = 10; // Размер поля 10x10
+        const cells = [];
+        let selectedCell = null;
+        let currentPlayer = 1;
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        // Инициализация поля
+        const gameContainer = document.getElementById('game-container');
+        const turnInfo = document.getElementById('turn-info');
+        const endTurnButton = document.getElementById('end-turn');
 
-        const paddleHeight = 10;
-        const ballRadius = 10;
-        let paddleWidth = 150;
-        let paddleX;
+        function createBoard() {
+            for (let i = 0; i < boardSize * boardSize; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.dataset.index = i;
 
-        let ballX, ballY;
-        let ballSpeedX = 2;
-        let ballSpeedY = -2;
+                // Устанавливаем начальные позиции для игроков
+                if (i < boardSize) { // Игрок 1 на верхней строке
+                    cell.classList.add('player1');
+                } else if (i >= boardSize * (boardSize - 1)) { // Игрок 2 на нижней строке
+                    cell.classList.add('player2');
+                }
 
-        let bricks = [];
-        const brickRowCount = 8; // Увеличиваем количество рядов блоков
-        const brickColumnCount = Math.floor(canvas.width / 80); // Увеличиваем количество колонок блоков
-        const brickWidth = 80;
-        const brickHeight = 20;
-        const brickPadding = 10;
-        const brickOffsetTop = 30;
-        const brickOffsetLeft = 30;
+                // Добавляем обработчик клика для выбора клетки
+                cell.addEventListener('click', () => handleCellClick(cell));
+                gameContainer.appendChild(cell);
+                cells.push(cell);
+            }
+        }
 
-        let score = 0;
-        let coins = 0;
-        let gameOver = false;
+        // Обработка клика по клетке
+        function handleCellClick(cell) {
+            const index = cell.dataset.index;
+            const playerClass = currentPlayer === 1 ? 'player1' : 'player2';
 
-        function createBricks() {
-            bricks = [];
-            for (let row = 0; row < brickRowCount; row++) {
-                bricks[row] = [];
-                for (let col = 0; col < brickColumnCount; col++) {
-                    bricks[row][col] = {
-                        x: col * (brickWidth + brickPadding) + brickOffsetLeft,
-                        y: row * (brickHeight + brickPadding) + brickOffsetTop,
-                        status: 1
-                    };
+            if (selectedCell) {
+                // Если клетка с войском выбрана, перемещаем войско на новую клетку
+                if (!cell.classList.contains('player1') && !cell.classList.contains('player2')) {
+                    // Перемещаем войско на пустую клетку
+                    selectedCell.classList.remove(playerClass, 'selected');
+                    cell.classList.add(playerClass);
+                    selectedCell = null;
+                    changeTurn();
+                }
+            } else {
+                // Если клетка выбрана, то выделяем её
+                if (cell.classList.contains(playerClass)) {
+                    selectedCell = cell;
+                    cell.classList.add('selected');
                 }
             }
         }
 
-        function drawBricks() {
-            for (let row = 0; row < brickRowCount; row++) {
-                for (let col = 0; col < brickColumnCount; col++) {
-                    let brick = bricks[row][col];
-                    if (brick.status === 1) {
-                        ctx.beginPath();
-                        ctx.rect(brick.x, brick.y, brickWidth, brickHeight);
-                        ctx.fillStyle = "#0095DD";
-                        ctx.fill();
-                        ctx.closePath();
-                    }
-                }
-            }
+        // Смена хода
+        function changeTurn() {
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            turnInfo.textContent = Ход игрока ${currentPlayer};
         }
 
-        function collisionDetection() {
-            for (let row = 0; row < brickRowCount; row++) {
-                for (let col = 0; col < brickColumnCount; col++) {
-                    let brick = bricks[row][col];
-                    if (brick.status === 1) {
-                        if (ballX > brick.x && ballX < brick.x + brickWidth &&
-                            ballY > brick.y && ballY < brick.y + brickHeight) {
-                            ballSpeedY = -ballSpeedY;
-                            brick.status = 0;
-                            score++;
-                            coins++;
-                            updateUI();
-                        }
-                    }
-                }
-            }
-        }
+        // Событие для завершения хода
+        endTurnButton.addEventListener('click', changeTurn);
 
-        function updateUI() {
-            document.getElementById("score").innerText = "Очки: " + score;
-            document.getElementById("coins").innerText = "Монеты: " + coins;
-        }
-
-        function drawBall() {
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        function drawPaddle() {
-            ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight - 20, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-        }
-
-        function moveBall() {
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
-
-            if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
-                ballSpeedX = -ballSpeedX;
-            }
-
-            if (ballY - ballRadius < 0) {
-                ballSpeedY = -ballSpeedY;
-            }
-
-            if (ballY + ballRadius > canvas.height - paddleHeight - 20 &&
-                ballX > paddleX && ballX < paddleX + paddleWidth) {
-                ballSpeedY = -ballSpeedY;
-            }
-
-            if (ballY + ballRadius > canvas.height) {
-                gameOver = true;
-                document.getElementById("gameOverMessage").style.display = 'block';
-                document.getElementById("backToMenu").style.display = 'block';
-            }
-        }
-
-        let mouseX;
-        canvas.addEventListener("mousemove", function(event) {
-            mouseX = event.clientX;
-            paddleX = mouseX - paddleWidth / 2;
-            if (paddleX < 0) paddleX = 0;
-            if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
-        });
-
-        function startGame() {
-            ballX = canvas.width / 2;
-            ballY = canvas.height - 30;
-            ballSpeedX = 2;
-            ballSpeedY = -2;
-            score = 0;
-            coins = 0;
-            gameOver = false;
-            createBricks();
-            updateUI();
-            gameLoop();
-        }
-
-        function gameLoop() {
-            if (gameOver) return;
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawBricks();
-            drawBall();
-            drawPaddle();
-            collisionDetection();
-            moveBall();
-            requestAnimationFrame(gameLoop);
-        }
-
-        document.getElementById("playButton").addEventListener("click", function() {
-            document.getElementById("menu").style.display = 'none';
-            document.getElementById("game").style.display = 'block';
-            paddleX = canvas.width / 2 - paddleWidth / 2;
-            startGame();
-        });
-
-        document.getElementById("backToMenu").addEventListener("click", function() {
-            document.getElementById("menu").style.display = 'block';
-            document.getElementById("game").style.display = 'none';
-            document.getElementById("gameOverMessage").style.display = 'none';
-            document.getElementById("backToMenu").style.display = 'none';
-        });
-
-        document.getElementById("restartButton").addEventListener("click", function() {
-            document.getElementById("gameOverMessage").style.display = 'none';
-            startGame();
-        });
-
-        startGame();
+        // Инициализация игры
+        createBoard();
     </script>
-
-</body>
+    </body>
 </html>
