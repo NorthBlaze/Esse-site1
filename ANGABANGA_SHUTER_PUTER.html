@@ -3,69 +3,230 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Список элементов</title>
+    <title>Сапер</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin-top: 50px;
+            margin-top: 20px;
         }
-        ul {
-            list-style-type: none;
-            padding: 0;
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(10, 30px);
+            grid-template-rows: repeat(10, 30px);
+            gap: 5px;
+            margin: 20px auto;
+            justify-content: center;
         }
-        li {
-            background-color: #f0f0f0;
-            margin: 10px;
-            padding: 10px;
-            border-radius: 5px;
+
+        .cell {
+            width: 30px;
+            height: 30px;
+            background-color: lightgray;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             cursor: pointer;
+            border: 1px solid #999;
         }
-        li:hover {
-            background-color: #d0e0f0;
+
+        .cell.opened {
+            background-color: white;
         }
-        .selected {
-            background-color: #c0f0c0;
+
+        .cell.flag {
+            background-color: yellow;
         }
-        #selected-item {
+
+        .cell.mine {
+            background-color: red;
+        }
+
+        #game-status {
             margin-top: 20px;
             font-size: 20px;
-            color: green;
+        }
+
+        #reset-btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 20px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h1>Выберите элемент из списка</h1>
-
-    <ul id="item-list">
-        <li>Элемент 1</li>
-        <li>Элемент 2</li>
-        <li>Элемент 3</li>
-        <li>Элемент 4</li>
-        <li>Элемент 5</li>
-    </ul>
-
-    <div id="selected-item"></div>
+    <h1>Сапер</h1>
+    <div id="game-status">Игра началась!</div>
+    <div id="board"></div>
+    <button id="reset-btn">Начать заново</button>
 
     <script>
-        // Получаем все элементы списка
-        const items = document.querySelectorAll('#item-list li');
-        const selectedItemDiv = document.getElementById('selected-item');
+        const boardSize = 10;  // Размер поля (10x10)
+        const mineCount = 10;  // Количество мин
+        let board = [];
+        let gameStatus = document.getElementById('game-status');
+        let resetBtn = document.getElementById('reset-btn');
+        let gameOver = false;
 
-        // Добавляем обработчик событий для каждого элемента списка
-        items.forEach(item => {
-            item.addEventListener('click', () => {
-                // Убираем класс "selected" у всех элементов
-                items.forEach(i => i.classList.remove('selected'));
-                // Добавляем класс "selected" к выбранному элементу
-                item.classList.add('selected');
-                
-                // Отображаем выбранный элемент
-                selectedItemDiv.textContent = Вы выбрали: ${item.textContent};
-            });
+        // Функция для создания игрового поля
+        function createBoard() {
+            board = [];
+            let mines = [];
+            let cells = [];
+
+            // Создаем поле и устанавливаем минное поле
+            for (let row = 0; row < boardSize; row++) {
+                let rowArr = [];
+                for (let col = 0; col < boardSize; col++) {
+                    rowArr.push({
+                        mine: false,
+                        flagged: false,
+                        opened: false,
+                        surroundingMines: 0
+                    });
+                }
+                board.push(rowArr);
+            }
+
+            // Размещение мин случайным образом
+            let placedMines = 0;
+            while (placedMines < mineCount) {
+                let randRow = Math.floor(Math.random() * boardSize);
+                let randCol = Math.floor(Math.random() * boardSize);
+                if (!board[randRow][randCol].mine) {
+                    board[randRow][randCol].mine = true;
+                    placedMines++;
+                }
+            }
+
+            // Для каждой клетки считаем количество мин вокруг
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (board[row][col].mine) continue;
+
+                    let mineCount = 0;
+                    for (let r = row - 1; r <= row + 1; r++) {
+                        for (let c = col - 1; c <= col + 1; c++) {
+                            if (r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
+                                if (board[r][c].mine) {
+                                    mineCount++;
+                                }
+                            }
+                        }
+                    }
+                    board[row][col].surroundingMines = mineCount;
+                }
+            }
+            // Создание визуальных элементов
+            let gameBoard = document.getElementById('board');
+            gameBoard.innerHTML = '';
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    let cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    cell.addEventListener('click', onCellClick);
+                    cell.addEventListener('contextmenu', onCellRightClick);
+                    gameBoard.appendChild(cell);
+                    cells.push(cell);
+                }
+            }
+        }
+
+        // Обработчик клика на клетку
+        function onCellClick(e) {
+            if (gameOver) return;
+
+            let row = e.target.dataset.row;
+            let col = e.target.dataset.col;
+            row = parseInt(row);
+            col = parseInt(col);
+
+            if (board[row][col].opened || board[row][col].flagged) return;
+
+            board[row][col].opened = true;
+            let cell = e.target;
+            cell.classList.add('opened');
+            if (board[row][col].mine) {
+                cell.classList.add('mine');
+                gameOver = true;
+                gameStatus.textContent = 'Игра окончена! Вы проиграли.';
+                return;
+            }
+
+            if (board[row][col].surroundingMines === 0) {
+                openAdjacentCells(row, col);
+            } else {
+                cell.textContent = board[row][col].surroundingMines;
+            }
+
+            // Проверка на победу
+            if (checkVictory()) {
+                gameOver = true;
+                gameStatus.textContent = 'Поздравляем, вы выиграли!';
+            }
+        }
+
+        // Обработчик правого клика (флаг)
+        function onCellRightClick(e) {
+            e.preventDefault();
+            if (gameOver) return;
+
+            let row = e.target.dataset.row;
+            let col = e.target.dataset.col;
+            row = parseInt(row);
+            col = parseInt(col);
+
+            if (board[row][col].opened) return;
+
+            board[row][col].flagged = !board[row][col].flagged;
+            let cell = e.target;
+            if (board[row][col].flagged) {
+                cell.classList.add('flag');
+            } else {
+                cell.classList.remove('flag');
+            }
+        }
+
+        // Открытие соседних клеток
+        function openAdjacentCells(row, col) {
+            for (let r = row - 1; r <= row + 1; r++) {
+                for (let c = col - 1; c <= col + 1; c++) {
+                    if (r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
+                        if (!board[r][c].opened && !board[r][c].flagged) {
+                            let cell = document.querySelector(.cell[data-row="${r}"][data-col="${c}"]);
+                            onCellClick({ target: cell });
+                        }
+                    }
+                }
+            }
+        }
+
+        // Проверка на победу
+        function checkVictory() {
+            for (let row = 0; row < boardSize; row++) {
+                for (let col = 0; col < boardSize; col++) {
+                    if (!board[row][col].mine && !board[row][col].opened) {
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // Сброс игры
+        resetBtn.addEventListener('click', () => {
+            gameOver = false;
+            gameStatus.textContent = 'Игра началась!';
+            createBoard();
         });
-    </script>
 
+        // Инициализация игры
+        createBoard();
+    </script>
 </body>
 </html>
