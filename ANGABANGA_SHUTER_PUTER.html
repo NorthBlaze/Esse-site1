@@ -117,7 +117,7 @@
 <body>
 
     <!-- Укажите свой URL изображения для фона -->
-    <img id="backgroundImage" src="https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png" alt="Background Image">
+    <img id="backgroundImage" src="https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Breakout+Game+Background" alt="Background Image">
     <h1>Breakout Game</h1>
 
     <div id="menu">
@@ -162,8 +162,8 @@
 
         let bricks = [];
         const brickRowCount = 5;
-        const brickColumnCount = 7;
-        const brickWidth = 75;
+        const brickColumnCount = 10; // Увеличено количество блоков для растягивания по экрану
+        const brickWidth = canvas.width / brickColumnCount - 5; // Растягиваем блоки по ширине экрана
         const brickHeight = 20;
         const brickPadding = 10;
         const brickOffsetTop = 30;
