@@ -79,7 +79,8 @@
 </head>
 <body>
 
-    <img id="backgroundImage" src="https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Breakout+Game+Background" alt="Background Image">
+    <!-- Укажите свой URL изображения для фона -->
+    <img id="backgroundImage" src="https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png">
     <h1>Breakout Game</h1>
 
     <div id="menu">
@@ -267,6 +268,11 @@
             gameLoop();
         });
 
+        // Инициализация игры при загрузке
+        window.onload = () => {
+            createBricks();
+            updateUI();
+        };
     </script>
 </body>
 </html>
