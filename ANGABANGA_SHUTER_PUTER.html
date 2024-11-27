@@ -9,8 +9,9 @@
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
             text-align: center;
+            background-color: #f4f4f4;
+            overflow: hidden; /* Отключаем прокрутку */
         }
 
         canvas {
@@ -42,28 +43,43 @@
             display: none;
         }
 
-        #game .hidden {
-            display: none;
-        }
-
         #score, #coins {
             font-size: 20px;
             margin-top: 10px;
         }
 
+        /* Для растягивания изображения на весь экран */
         #backgroundImage {
-            width: 100%;
-            height: 100vh;
-            object-fit: cover;
             position: absolute;
-            z-index: -1;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh; /* Устанавливаем высоту на весь экран */
+            object-fit: cover;
+            z-index: -1; /* Помещаем изображение на фон */
+        }
+
+        /* Стили для кнопок */
+        #playButton, #shopButton {
+            padding: 15px 30px;
+            font-size: 20px;
+            margin-top: 20px;
+            background-color: #3498db;
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+
+        #playButton:hover, #shopButton:hover {
+            background-color: #2980b9;
         }
 
     </style>
 </head>
 <body>
 
-    <img id="backgroundImage" src="https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png" alt="Background Image">
+    <img id="backgroundImage" src="https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Breakout+Game+Background" alt="Background Image">
     <h1>Breakout Game</h1>
 
     <div id="menu">
@@ -251,16 +267,6 @@
             gameLoop();
         });
 
-        // Магазин
-        document.getElementById("shopButton").addEventListener("click", () => {
-            alert("Магазин пока не доступен.");
-        });
-
-        // Стартовая функция
-        window.onload = () => {
-            createBricks();
-        };
     </script>
-
 </body>
 </html>
