@@ -1,160 +1,256 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chrome Dino Game</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Арканоид</title>
     <style>
-        body {
+        * {
             margin: 0;
-            overflow: hidden;
-            background-color: #f4f4f4;
-            font-family: Arial, sans-serif;
+            padding: 0;
+            box-sizing: border-box;
         }
-
+        body, html {
+            height: 100%;
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
         canvas {
             display: block;
-            background-color: #f5f5f5;
-            margin: 0 auto;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            background-color: #000;
+            border: 1px solid #fff;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
         }
-
-        #gameOver {
+        .game-info {
             position: absolute;
+            color: white;
+            font-size: 20px;
+            z-index: 10;
+        }
+        .score {
+            top: 10px;
+            left: 10px;
+        }
+        .game-over {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 30px;
-            color: #333;
-            display: none;
+            font-size: 40px;
+            text-align: center;
         }
-
-        #score {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            font-size: 24px;
-            color: #333;
+        .restart-button {
+            background-color: #f1c40f;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-size: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .restart-button:hover {
+            background-color: #e67e22;
         }
     </style>
 </head>
 <body>
-    <div id="score">Score: 0</div>
-    <div id="gameOver">Game Over</div>
-    <canvas id="gameCanvas"></canvas>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        const WIDTH = 800;
-        const HEIGHT = 200;
-        canvas.width = WIDTH;
-        canvas.height = HEIGHT;
+<canvas id="gameCanvas"></canvas>
 
-        // Игровые переменные
-        let score = 0;
-        let gameOver = false;
+<div class="game-info score">
+    Очки: <span id="score">0</span>
+</div>
 
-        // Динозавр
-        const dino = {
-            x: 50,
-            y: HEIGHT - 40,
-            width: 20,
-            height: 30,
-            color: 'green',
-            speedY: 0,
-            gravity: 0.8,
-            jumpPower: -12,
-            isJumping: false,
-        };
+<div class="game-info game-over" id="gameOverMessage">
+    Игра окончена
+    <br><button class="restart-button" id="restartBtn">Начать заново</button>
+</div>
 
-        // Препятствия
-        let obstacles = [];
-        let obstacleSpeed = 3;
+<script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
 
-        // Управление
-        document.addEventListener('keydown', (e) => {
-            if (e.key === " " && !dino.isJumping && !gameOver) {
-                dino.speedY = dino.jumpPower;
-                dino.isJumping = true;
+    // Настройка canvas
+    let canvasWidth, canvasHeight;
+
+    function resizeCanvas() {
+        canvasWidth = window.innerWidth;
+        canvasHeight = window.innerHeight;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+    }
+
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+
+    // Игровые параметры
+    const paddleWidth = 100;
+    const paddleHeight = 20;
+    const ballRadius = 10;
+    let paddleX, paddleSpeed = 6;
+    let ballX, ballY, ballSpeedX, ballSpeedY;
+    let bricks = [];
+    const brickWidth = 75;
+    const brickHeight = 30;
+    const brickPadding = 10;
+    const brickOffsetTop = 30;
+    const brickOffsetLeft = 30;
+    let score = 0;
+    let gameOver = false;
+
+    // Обновление игры
+    function startGame() {
+        // Инициализация элементов
+        paddleX = (canvasWidth - paddleWidth) / 2;
+        ballX = canvasWidth / 2;
+        ballY = canvasHeight - 30;
+        ballSpeedX = 4;
+        ballSpeedY = -4;
+
+        // Сброс очков и состояния
+        score = 0;
+        gameOver = false;
+        document.getElementById("score").textContent = score;
+        document.getElementById("gameOverMessage").style.display = "none";
+
+        // Создание блоков
+        createBricks();
+
+        // Начало игрового цикла
+        gameLoop();
+    }
+
+    // Создание блоков
+    function createBricks() {
+        bricks = [];
+        for (let row = 0; row < 5; row++) {
+            bricks[row] = [];
+            for (let col = 0; col < Math.floor((canvasWidth - brickOffsetLeft * 2) / (brickWidth + brickPadding)); col++) {
+                bricks[row][col] = { x: 0, y: 0, status: 1 };
             }
-        });
+        }
+    }
 
-        // Функция для генерации препятствий
-        function createObstacle() {
-            const height = Math.random() * 20 + 20;
-            obstacles.push({ x: WIDTH, y: HEIGHT - height, width: 20, height });
+    // Обновление игры
+    function gameLoop() {
+        if (gameOver) return;
+        
+        ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+        // Двигаем мяч
+        ballX += ballSpeedX;
+        ballY += ballSpeedY;
+
+        // Отражение мяча от стен
+        if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
+            ballSpeedX = -ballSpeedX;
+        }
+        if (ballY - ballRadius < 0) {
+            ballSpeedY = -ballSpeedY;
+        } else if (ballY + ballRadius > canvasHeight - paddleHeight) {
+            if (ballX > paddleX && ballX < paddleX + paddleWidth) {
+                ballSpeedY = -ballSpeedY;
+                score++;
+                document.getElementById("score").textContent = score;
+            } else if (ballY + ballRadius > canvasHeight) {
+                gameOver = true;
+                document.getElementById("gameOverMessage").style.display = "block";
+                return;
+            }
         }
 
-        // Обновление игрока и препятствий
-        function update() {
-            if (gameOver) return;
-
-            // Обновление динозавра
-            dino.y += dino.speedY;
-            dino.speedY += dino.gravity;
-
-            if (dino.y >= HEIGHT - 40) {
-                dino.y = HEIGHT - 40;
-                dino.speedY = 0;
-                dino.isJumping = false;
-            }
-
-            // Обновление препятствий
-            for (let i = 0; i < obstacles.length; i++) {
-                obstacles[i].x -= obstacleSpeed;
-
-                // Проверка на столкновение
-                if (dino.x + dino.width > obstacles[i].x && dino.x < obstacles[i].x + obstacles[i].width &&
-                    dino.y + dino.height > obstacles[i].y) {
-                    gameOver = true;
-                    document.getElementById('gameOver').style.display = 'block';
-                    break;
+        // Отражение от блоков
+        for (let row = 0; row < bricks.length; row++) {
+            for (let col = 0; col < bricks[row].length; col++) {
+                const brick = bricks[row][col];
+                if (brick.status === 1) {
+                    if (ballX > brick.x && ballX < brick.x + brickWidth && ballY > brick.y && ballY < brick.y + brickHeight) {
+                        ballSpeedY = -ballSpeedY;
+                        brick.status = 0;
+                        score += 10;
+                        document.getElementById("score").textContent = score;
+                    }
                 }
+            }
+        }
 
-                // Удаление препятствий, которые ушли за экран
-                if (obstacles[i].x + obstacles[i].width < 0) {
-                    obstacles.splice(i, 1);
-                    i--;
-                    score++;
+        // Рисуем блоки
+        for (let row = 0; row < bricks.length; row++) {
+            for (let col = 0; col < bricks[row].length; col++) {
+                if (bricks[row][col].status === 1) {
+                    const brick = bricks[row][col];
+                    brick.x = brickOffsetLeft + col * (brickWidth + brickPadding);
+                    brick.y = brickOffsetTop + row * (brickHeight + brickPadding);
+                    ctx.fillStyle = "#0095DD";
+                    ctx.fillRect(brick.x, brick.y, brickWidth, brickHeight);
                 }
             }
-
-            // Генерация новых препятствий
-            if (Math.random() < 0.02) {
-                createObstacle();
-            }
-
-            // Обновление экрана
-            ctx.clearRect(0, 0, WIDTH, HEIGHT);
-            ctx.fillStyle = dino.color;
-            ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
-
-            // Рисуем препятствия
-            ctx.fillStyle = 'brown';
-            for (const obstacle of obstacles) {
-                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
-            }
-
-            // Отображение счета
-            document.getElementById('score').textContent = 'Score: ' + score;
-
-            requestAnimationFrame(update);
         }
 
-        // Запуск игры
-        function startGame() {
-            score = 0;
-            gameOver = false;
-            obstacles = [];
-            dino.y = HEIGHT - 40;
-            dino.speedY = 0;
-            document.getElementById('gameOver').style.display = 'none';
-            update();
-        }
+        // Рисуем ракетку
+        ctx.beginPath();
+        ctx.rect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
 
-        // Инициализация
+        // Рисуем мяч
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Двигаем ракетку
+    let rightPressed = false;
+    let leftPressed = false;
+
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+
+    function keyDownHandler(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") {
+            rightPressed = true;
+        } else if (e.key === "Left" || e.key === "ArrowLeft") {
+            leftPressed = true;
+        }
+    }
+
+    function keyUpHandler(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") {
+            rightPressed = false;
+        } else if (e.key === "Left" || e.key === "ArrowLeft") {
+            leftPressed = false;
+        }
+    }
+
+    // Управление мышью для мобильных устройств
+    let mouseX = 0;
+    canvas.addEventListener("mousemove", function(event) {
+        mouseX = event.clientX || event.touches[0].clientX;
+        paddleX = mouseX - paddleWidth / 2;
+        if (paddleX < 0) paddleX = 0;
+        if (paddleX + paddleWidth > canvasWidth) paddleX = canvasWidth - paddleWidth;
+    });
+
+    // Кнопка для перезапуска игры
+    document.getElementById("restartBtn").addEventListener("click", function() {
         startGame();
-    </script>
+    });
+
+    startGame(); // Начало игры
+</script>
+
 </body>
 </html>
