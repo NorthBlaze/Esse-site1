@@ -195,57 +195,6 @@
         }
     }
 
-    // Бонусы
-    let bonuses = [];
-    function createBonus(brickX, brickY) {
-        const bonusType = Math.random();
-        let bonus = { x: brickX, y: brickY, width: 20, height: 20, type: '' };
-
-        if (bonusType < 0.2) {
-            bonus.type = 'slowBall';  // Замедление мяча
-        } else if (bonusType < 0.4) {
-            bonus.type = 'freezeBall'; // Заморозка мяча
-        } else if (bonusType < 0.6) {
-            bonus.type = 'sizeIncrease'; // Увеличение платформы
-        } else if (bonusType < 0.8) {
-            bonus.type = 'speedIncrease'; // Ускорение платформы
-        } else {
-            bonus.type = 'ballSpeedIncrease'; // Ускорение мяча
-        }
-
-        bonuses.push(bonus);
-    }
-
-    // Обработка бонусов
-    function updateBonuses() {
-        bonuses.forEach((bonus, index) => {
-            bonus.y += 5; // Скорость падения бонусов
-            ctx.fillStyle = "#FF5733"; // Цвет бонусов
-            ctx.fillRect(bonus.x, bonus.y, bonus.width, bonus.height);
-
-            if (bonus.y + bonus.height > canvasHeight - paddleHeight && bonus.x > paddleX && bonus.x < paddleX + paddleWidth) {
-                // Применяем бонус в зависимости от типа
-                if (bonus.type === 'slowBall') {
-                    ballSpeedMultiplier = 0.5; // Замедление мяча
-                } else if (bonus.type === 'freezeBall') {
-                    ballSpeedMultiplier = 0; // Заморозка мяча
-                    setTimeout(() => {
-                        ballSpeedMultiplier = 1; // Разморозка мяча
-                    }, 2000);
-                } else if (bonus.type === 'sizeIncrease') {
-                    paddleWidth += 20;
-                } else if (bonus.type === 'speedIncrease') {
-                    paddleSpeed += 2;
-                } else if (bonus.type === 'ballSpeedIncrease') {
-                    ballSpeedX *= 1.2;
-                    ballSpeedY *= 1.2;
-                }
-
-                bonuses.splice(index, 1); // Удалить бонус после применения
-            }
-        });
-    }
-
     // Инициализация игры
     function startGame() {
         // Показываем меню выбора сложности
@@ -264,7 +213,7 @@
         // Начальные параметры платформы и мяча
         paddleX = (canvasWidth - paddleWidth) / 2;
         ballX = canvasWidth / 2;
-        ballY = canvasHeight - 30;
+        ballY = canvasHeight - paddleHeight - ballRadius;  // Мяч появляется прямо на платформе
         ballSpeedX = 4 * ballSpeedMultiplier;  // Начальная скорость мяча по оси X
         ballSpeedY = -4 * ballSpeedMultiplier;  // Начальная скорость мяча по оси Y
 
@@ -303,123 +252,108 @@
 
         // Проверка на столкновение с стенами
         if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
-            ballSpeedX = -ballSpeedX;  // Отражение мяча по оси X
+            ballSpeedX = -ballSpeedX;
         }
+
         if (ballY - ballRadius < 0) {
-            ballSpeedY = -ballSpeedY;  // Отражение мяча по оси Y (от верхней границы)
-        } else if (ballY + ballRadius > canvasHeight - paddleHeight) {
-            // Проверка на столкновение с платформой
+            ballSpeedY = -ballSpeedY;
+        } else if (ballY + ballRadius > canvasHeight) {
             if (ballX > paddleX && ballX < paddleX + paddleWidth) {
-                // Расчет направления отскока в зависимости от того, где мяч попал на платформу
-                const hitPosition = (ballX - paddleX) / paddleWidth;  // Отношение позиции удара мяча к ширине платформы
+                // Столкновение с платформой
                 ballSpeedY = -ballSpeedY;
-
-                // Угол отскока мяча
-                ballSpeedX = (hitPosition - 0.5) * 10; // Чем дальше от центра платформы удар, тем сильнее отклонение
-
-                score++;  // Увеличиваем счет
+                const hitPosition = (ballX - paddleX) / paddleWidth;
+                ballSpeedX = (hitPosition - 0.5) * 10; // Изменение угла отскока
+                score++;  // Увеличиваем очки
                 coins++;  // Увеличиваем монеты
                 document.getElementById("score").textContent = score;
                 document.getElementById("coins").textContent = `Монеты: ${coins}`;
-            } else if (ballY + ballRadius > canvasHeight) {
-                // Если мяч падает ниже платформы (не попал)
-                gameOver = true;  // Игра окончена
-                document.getElementById("gameOverMessage").classList.remove("hidden");  // Показываем сообщение
-                return;  // Завершаем цикл игры
+            } else {
+                // Если мяч выходит за платформу
+                gameOver = true;
+                document.getElementById("gameOverMessage").classList.remove("hidden");
+                return;
             }
         }
 
-        // Обработка бонусов
-        updateBonuses();
-
-        // Проверка на столкновение с блоками
-        for (let row = 0; row < bricks.length; row++) {
-            for (let col = 0; col < bricks[row].length; col++) {
-                const brick = bricks[row][col];
-                if (brick.status === 1) {  // Если блок активен
-                    if (ballX > brick.x && ballX < brick.x + brickWidth &&
-                        ballY > brick.y && ballY < brick.y + brickHeight) {
-                        // Отражение мяча
-                        ballSpeedY = -ballSpeedY;
-                        brick.status = 0;  // Блок уничтожен
-                        createBonus(brick.x, brick.y);  // Генерация бонуса
-                        score += 10;  // Увеличиваем счет
-                        coins++;  // Увеличиваем монеты
-                        document.getElementById("score").textContent = score;
-                        document.getElementById("coins").textContent = `Монеты: ${coins}`;
-                    }
-                }
-            }
-        }
-
-        // Рисуем блоки
-        for (let row = 0; row < bricks.length; row++) {
-            for (let col = 0; col < bricks[row].length; col++) {
-                if (bricks[row][col].status === 1) {
-                    const brick = bricks[row][col];
-                    brick.x = brickOffsetLeft + col * (brickWidth + brickPadding);
-                    brick.y = brickOffsetTop + row * (brickHeight + brickPadding);
-                    ctx.fillStyle = "#0095DD";  // Цвет блоков
-                    ctx.fillRect(brick.x, brick.y, brickWidth, brickHeight);
-                }
-            }
+        // Двигаем платформу
+        if (rightPressed && paddleX < canvasWidth - paddleWidth) {
+            paddleX += paddleSpeed;
+        } else if (leftPressed && paddleX > 0) {
+            paddleX -= paddleSpeed;
         }
 
         // Рисуем платформу
+        ctx.beginPath();
+        ctx.rect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
         ctx.fillStyle = paddleColor;
-        ctx.fillRect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
+        ctx.fill();
+        ctx.closePath();
 
-        // Рисуем вторую платформу, если куплена
-        if (extraPaddleCount > 0) {
-            ctx.fillStyle = "#FF5733"; // Цвет второй платформы
-            ctx.fillRect(paddleX + paddleWidth + 10, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
+        // Рисуем мяч
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
+
+        // Рисуем блоки
+        for (let row = 0; row < 5; row++) {
+            for (let col = 0; col < Math.floor((canvasWidth - brickOffsetLeft * 2) / (brickWidth + brickPadding)); col++) {
+                if (bricks[row][col].status === 1) {
+                    let brickX = brickOffsetLeft + col * (brickWidth + brickPadding);
+                    let brickY = brickOffsetTop + row * (brickHeight + brickPadding);
+                    bricks[row][col].x = brickX;
+                    bricks[row][col].y = brickY;
+
+                    ctx.beginPath();
+                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
+                    ctx.fillStyle = "#0095DD";
+                    ctx.fill();
+                    ctx.closePath();
+                }
+            }
         }
 
-        // Управление движением платформы с помощью курсора
-        document.addEventListener('mousemove', (e) => {
-            paddleX = e.clientX - paddleWidth / 2;
-            if (paddleX < 0) paddleX = 0;
-            if (paddleX > canvasWidth - paddleWidth) paddleX = canvasWidth - paddleWidth;
-        });
-
-        // Продолжаем игровой цикл
+        // Запуск следующего кадра
         requestAnimationFrame(gameLoop);
     }
 
-    // Функции для запуска игры из меню
+    // Управление платформой
+    let rightPressed = false;
+    let leftPressed = false;
+
+    document.addEventListener("keydown", keyDownHandler, false);
+    document.addEventListener("keyup", keyUpHandler, false);
+
+    function keyDownHandler(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") {
+            rightPressed = true;
+        } else if (e.key === "Left" || e.key === "ArrowLeft") {
+            leftPressed = true;
+        }
+    }
+
+    function keyUpHandler(e) {
+        if (e.key === "Right" || e.key === "ArrowRight") {
+            rightPressed = false;
+        } else if (e.key === "Left" || e.key === "ArrowLeft") {
+            leftPressed = false;
+        }
+    }
+
+    // Запуск игры
     document.getElementById("startBtn").addEventListener("click", startGame);
     document.getElementById("easyBtn").addEventListener("click", () => setDifficulty("easy"));
     document.getElementById("mediumBtn").addEventListener("click", () => setDifficulty("medium"));
     document.getElementById("hardBtn").addEventListener("click", () => setDifficulty("hard"));
+    document.getElementById("restartBtn").addEventListener("click", startGameGame);
 
-    // Перезапуск игры
-    document.getElementById("restartBtn").addEventListener("click", () => {
-        gameOver = false;
-        startGameGame();
+    // Магазин
+    document.getElementById("shopBtn").addEventListener("click", function() {
+        document.getElementById("shop").classList.remove("hidden");
+        document.getElementById("mainMenu").classList.add("hidden");
     });
-
-    // Покупка второй платформы
-    document.getElementById("buyExtraPaddle").addEventListener("click", () => {
-        if (coins >= 1299) {
-            extraPaddleCount++; // Увеличиваем количество платформ
-            coins -= 1299; // Снимаем монеты
-            document.getElementById("coins").textContent = `Монеты: ${coins}`;
-        } else {
-            alert("Недостаточно монет!");
-        }
-    });
-
-    // Покупка изменения цвета платформы
-    document.getElementById("buyPaddleColor").addEventListener("click", () => {
-        if (coins >= 100) {
-            paddleColor = `#${Math.floor(Math.random()*16777215).toString(16)}`; // Рандомный цвет
-            coins -= 100;
-            document.getElementById("coins").textContent = `Монеты: ${coins}`;
-        } else {
-            alert("Недостаточно монет!");
-        }
-    });
-
 </script>
+
 </body>
 </html>
