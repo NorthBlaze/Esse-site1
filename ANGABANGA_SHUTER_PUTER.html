@@ -281,28 +281,24 @@
         gameLoop();
     }
 
-    // Создание блоков
     function createBricks() {
         bricks = [];
         for (let row = 0; row < 5; row++) {
             bricks[row] = [];
             for (let col = 0; col < 7; col++) {
-                bricks[row][col] = { x: col * (brickWidth + brickPadding) + brickOffsetLeft, y: row * (brickHeight + brickPadding) + brickOffsetTop, status: 1, bonus: getRandomBonus() };
+                bricks[row][col] = { x: col * (brickWidth + brickPadding) + brickOffsetLeft, y: row * (brickHeight + brickPadding) + brickOffsetTop, status: 1 };
             }
         }
     }
 
-    // Главный игровой цикл
     function gameLoop() {
         if (gameOver) return;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Обработка мяча
         ballX += ballSpeedX * ballSpeedMultiplier;
         ballY += ballSpeedY * ballSpeedMultiplier;
 
-        // Столкновение с границами экрана
         if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
             ballSpeedX = -ballSpeedX;
         }
@@ -324,70 +320,27 @@
             }
         }
 
-        // Управление платформой
         document.addEventListener("mousemove", (e) => {
             paddleX = e.clientX - paddleWidth / 2;
             if (paddleX < 0) paddleX = 0;
             if (paddleX > canvasWidth - paddleWidth) paddleX = canvasWidth - paddleWidth;
         });
 
-        // Рисуем платформу
         ctx.beginPath();
         ctx.rect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
         ctx.fillStyle = "#0095DD";
         ctx.fill();
         ctx.closePath();
 
-        // Рисуем мяч
         ctx.beginPath();
         ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
         ctx.fillStyle = "#0095DD";
         ctx.fill();
         ctx.closePath();
 
-        // Рисуем блоки
-        for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < 7; col++) {
-                let brick = bricks[row][col];
-                if (brick.status === 1) {
-                    let brickX = brick.x;
-                    let brickY = brick.y;
-                    if (ballX > brickX && ballX < brickX + brickWidth && ballY - ballRadius < brickY + brickHeight && ballY + ballRadius > brickY) {
-                        ballSpeedY = -ballSpeedY;
-                        brick.status = 0;  // Убираем блок
-                        score += 10;
-                        coins += 5;
-                        updateUI();
-
-                        // Применяем бонусы
-                        if (brick.bonus === 'split') {
-                            balls.push({
-                                x: ballX + ballRadius,
-                                y: ballY,
-                                speedX: ballSpeedX + 2,
-                                speedY: ballSpeedY
-                            });
-                        } else if (brick.bonus === 'speedUp') {
-                            ballSpeedMultiplier = 1.5;
-                        } else if (brick.bonus === 'slowDown') {
-                            ballSpeedMultiplier = 0.5;
-                        } else if (brick.bonus === 'freeze') {
-                            ballFreeze = true;
-                        }
-                    }
-                    ctx.beginPath();
-                    ctx.rect(brickX, brickY, brickWidth, brickHeight);
-                    ctx.fillStyle = "#0095DD";
-                    ctx.fill();
-                    ctx.closePath();
-                }
-            }
-        }
-
         requestAnimationFrame(gameLoop);
     }
 
-    // Кнопки управления
     document.getElementById("restartBtn").addEventListener("click", () => startGame());
     document.getElementById("startBtn").addEventListener("click", () => {
         document.getElementById("mainMenu").classList.add("hidden");
@@ -414,7 +367,18 @@
         document.getElementById("mainMenu").classList.remove("hidden");
     });
 
-    // Загружаем данные пользователя
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        const inputUsername = document.getElementById("username").value.trim();
+        if (inputUsername) {
+            username = inputUsername;
+            localStorage.setItem('username', username);
+            document.getElementById("loginScreen").classList.add("hidden");
+            startGame();
+        } else {
+            alert("Введите имя для входа.");
+        }
+    });
+
     loadUserData();
     setCanvasSize();
     window.addEventListener('resize', setCanvasSize);
