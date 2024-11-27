@@ -23,13 +23,23 @@
         #menu {
             margin-top: 50px;
             display: block;
+            text-align: center;
         }
 
         #menu button {
-            padding: 10px 20px;
-            font-size: 18px;
+            padding: 20px 40px;
+            font-size: 24px;
             cursor: pointer;
-            margin: 10px;
+            margin: 20px;
+            background-color: #3498db;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            width: 250px;
+        }
+
+        #menu button:hover {
+            background-color: #2980b9;
         }
 
         #gameOverMessage {
@@ -59,20 +69,47 @@
             z-index: -1; /* Помещаем изображение на фон */
         }
 
-        /* Стили для кнопок */
-        #playButton, #shopButton {
-            padding: 15px 30px;
-            font-size: 20px;
-            margin-top: 20px;
-            background-color: #3498db;
-            border: none;
-            color: white;
-            cursor: pointer;
-            border-radius: 10px;
+        #levelSelection {
+            display: none;
+            margin-top: 50px;
         }
 
-        #playButton:hover, #shopButton:hover {
-            background-color: #2980b9;
+        #levelSelection button {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            margin: 10px;
+            background-color: #2ecc71;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            width: 200px;
+        }
+
+        #levelSelection button:hover {
+            background-color: #27ae60;
+        }
+
+        /* Стили для магазина */
+        #shop {
+            display: none;
+            margin-top: 50px;
+        }
+
+        #shop button {
+            padding: 15px 30px;
+            font-size: 20px;
+            cursor: pointer;
+            margin: 10px;
+            background-color: #f39c12;
+            border: none;
+            color: white;
+            border-radius: 10px;
+            width: 200px;
+        }
+
+        #shop button:hover {
+            background-color: #e67e22;
         }
 
     </style>
@@ -80,12 +117,24 @@
 <body>
 
     <!-- Укажите свой URL изображения для фона -->
-    <img id="backgroundImage" src="https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png">
+    <img id="backgroundImage" src="https://via.placeholder.com/1920x1080/87CEEB/FFFFFF?text=Breakout+Game+Background" alt="Background Image">
     <h1>Breakout Game</h1>
 
     <div id="menu">
         <button id="playButton">Играть</button>
         <button id="shopButton">Магазин</button>
+    </div>
+
+    <div id="levelSelection">
+        <button id="easyLevel">Легкий уровень</button>
+        <button id="mediumLevel">Средний уровень</button>
+        <button id="hardLevel">Сложный уровень</button>
+    </div>
+
+    <div id="shop">
+        <button id="buyDoubleBall">Купить удвоение мяча</button>
+        <button id="buySpeedUp">Купить ускорение мяча</button>
+        <button id="buyFreeze">Купить заморозку мяча</button>
     </div>
 
     <div id="game" class="hidden">
@@ -94,6 +143,7 @@
         <div id="coins">Монеты: 0</div>
         <div id="gameOverMessage">
             Игра окончена! <button id="restartButton">Начать заново</button>
+            <button id="backToMenu">Вернуться в меню</button>
         </div>
     </div>
 
@@ -122,6 +172,8 @@
         let score = 0;
         let coins = 0;
         let gameOver = false;
+
+        let gameLevel = 'easy'; // Значение уровня
 
         // Функция для создания блоков
         function createBricks() {
@@ -212,66 +264,87 @@
                     updateUI();
                 } else {
                     gameOver = true;
-                    document.getElementById("gameOverMessage").classList.remove("hidden");
-                    return;
+                    document.getElementById("gameOverMessage").style.display = 'block';
                 }
             }
 
-            // Управление платформой (движение за курсором)
-            document.addEventListener("mousemove", (e) => {
-                paddleX = e.clientX - paddleWidth / 2;
-                if (paddleX < 0) paddleX = 0;
-                if (paddleX > canvas.width - paddleWidth) paddleX = canvas.width - paddleWidth;
-            });
+            // Движение платформы
+            paddleX = mouseX - paddleWidth / 2;
 
+            // Рисуем платформу
             ctx.beginPath();
             ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
             ctx.fillStyle = "#0095DD";
             ctx.fill();
             ctx.closePath();
 
+            // Рисуем мяч
             ctx.beginPath();
             ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
             ctx.fillStyle = "#0095DD";
             ctx.fill();
             ctx.closePath();
 
+            // Запрашиваем новый кадр
             requestAnimationFrame(gameLoop);
         }
 
-        // Кнопка перезапуска игры
-        document.getElementById("restartButton").addEventListener("click", () => {
-            gameOver = false;
-            score = 0;
-            coins = 0;
-            createBricks();
-            updateUI();
-            document.getElementById("gameOverMessage").classList.add("hidden");
-            gameLoop();
-        });
-
-        // Начало игры
-        document.getElementById("playButton").addEventListener("click", () => {
-            document.getElementById("menu").classList.add("hidden");
-            document.getElementById("game").classList.remove("hidden");
+        // Функция для старта игры
+        function startGame(level) {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-
-            // Инициализация данных
-            paddleWidth = 100;
-            paddleX = (canvas.width - paddleWidth) / 2;
+            paddleWidth = 75;
             ballX = canvas.width / 2;
             ballY = canvas.height - 30;
-
             createBricks();
-            updateUI();
+            score = 0;
+            coins = 0;
+            gameOver = false;
+            ballSpeedX = level === 'easy' ? 2 : (level === 'medium' ? 3 : 4);
+            ballSpeedY = -2;
+            document.getElementById("game").style.display = 'block';
+            document.getElementById("menu").style.display = 'none';
+            document.getElementById("levelSelection").style.display = 'none';
+            document.getElementById("shop").style.display = 'none';
             gameLoop();
+        }
+
+        // Функции для кнопок
+        document.getElementById("playButton").addEventListener("click", () => {
+            document.getElementById("levelSelection").style.display = 'block';
+            document.getElementById("menu").style.display = 'none';
         });
 
-        // Инициализация игры при загрузке
+        document.getElementById("shopButton").addEventListener("click", () => {
+            document.getElementById("shop").style.display = 'block';
+            document.getElementById("menu").style.display = 'none';
+        });
+
+        document.getElementById("easyLevel").addEventListener("click", () => {
+            startGame('easy');
+        });
+
+        document.getElementById("mediumLevel").addEventListener("click", () => {
+            startGame('medium');
+        });
+
+        document.getElementById("hardLevel").addEventListener("click", () => {
+            startGame('hard');
+        });
+
+        document.getElementById("backToMenu").addEventListener("click", () => {
+            document.getElementById("menu").style.display = 'block';
+            document.getElementById("game").style.display = 'none';
+            document.getElementById("levelSelection").style.display = 'none';
+            document.getElementById("shop").style.display = 'none';
+        });
+
+        // Инициализация
         window.onload = () => {
-            createBricks();
-            updateUI();
+            document.getElementById("menu").style.display = 'block';
+            document.getElementById("levelSelection").style.display = 'none';
+            document.getElementById("game").style.display = 'none';
+            document.getElementById("shop").style.display = 'none';
         };
     </script>
 </body>
