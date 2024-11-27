@@ -6,12 +6,11 @@
     <title>Breakout Game</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            text-align: center;
             background-color: #f4f4f4;
             overflow: hidden;
+            font-family: Arial, sans-serif;
         }
 
         canvas {
@@ -45,13 +44,6 @@
             background-color: #2980b9;
         }
 
-        #gameOverMessage {
-            display: none;
-            font-size: 24px;
-            color: red;
-            margin-top: 20px;
-        }
-
         #game {
             display: none;
         }
@@ -59,81 +51,31 @@
         #score, #coins {
             font-size: 20px;
             margin-top: 10px;
-        }
-
-        #backgroundImage {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100vh;
-            object-fit: cover;
-            z-index: -1;
-        }
-
-        #levelSelection {
-            display: none;
-            margin-top: 50px;
-        }
-
-        #levelSelection button {
-            padding: 15px 30px;
-            font-size: 20px;
-            cursor: pointer;
-            margin: 10px;
-            background-color: #2ecc71;
-            border: none;
             color: white;
-            border-radius: 10px;
-            width: 200px;
         }
 
-        #levelSelection button:hover {
-            background-color: #27ae60;
-        }
-
-        #shop {
+        #gameOverMessage {
             display: none;
-            margin-top: 50px;
+            font-size: 24px;
+            color: red;
+            margin-top: 20px;
         }
 
-        #shop button {
-            padding: 15px 30px;
-            font-size: 20px;
+        #gameOverMessage button {
+            font-size: 18px;
+            padding: 10px 20px;
+            margin-top: 10px;
             cursor: pointer;
-            margin: 10px;
-            background-color: #f39c12;
-            border: none;
-            color: white;
-            border-radius: 10px;
-            width: 200px;
-        }
-
-        #shop button:hover {
-            background-color: #e67e22;
         }
     </style>
 </head>
 <body>
 
-    <!-- Укажите свой URL изображения для фона -->
-    <img id="backgroundImage" src="https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png" alt="Background Image">
+    <!-- Фон игры -->
+    <canvas id="gameCanvas"></canvas>
 
     <div id="menu">
         <button id="playButton">Играть</button>
-        <button id="shopButton">Магазин</button>
-    </div>
-
-    <div id="levelSelection">
-        <button id="easyLevel">Легкий уровень</button>
-        <button id="mediumLevel">Средний уровень</button>
-        <button id="hardLevel">Сложный уровень</button>
-    </div>
-
-    <div id="shop">
-        <button id="buyDoubleBall">Купить удвоение мяча</button>
-        <button id="buySpeedUp">Купить ускорение мяча</button>
-        <button id="buyFreeze">Купить заморозку мяча</button>
     </div>
 
     <div id="game">
@@ -142,7 +84,6 @@
         <div id="coins">Монеты: 0</div>
         <div id="gameOverMessage">
             Игра окончена! <button id="restartButton">Начать заново</button>
-            <button id="backToMenu">Вернуться в меню</button>
         </div>
     </div>
 
@@ -151,30 +92,38 @@
         let canvas = document.getElementById("gameCanvas");
         let ctx = canvas.getContext("2d");
 
+        // Устанавливаем размеры канваса
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
         // Размеры платформы и мяча
         const paddleHeight = 10;
         const ballRadius = 10;
+        let paddleWidth = 150; // Начальная ширина платформы
+        let paddleX;
 
-        let paddleX, paddleWidth;
-        let ballX, ballY;
-        let ballSpeedX = 2, ballSpeedY = -2;
+        // Начальные координаты мяча
+        let ballX = canvas.width / 2;
+        let ballY = canvas.height - 30;
+        let ballSpeedX = 2;
+        let ballSpeedY = -2;
 
+        // Блоки
         let bricks = [];
         const brickRowCount = 5;
-        const brickColumnCount = 10; // Увеличено количество блоков для растягивания по экрану
-        const brickWidth = canvas.width / brickColumnCount - 5; // Растягиваем блоки по ширине экрана
+        const brickColumnCount = Math.floor(canvas.width / 60); // Количество блоков на всю ширину
+        const brickWidth = 60;
         const brickHeight = 20;
         const brickPadding = 10;
         const brickOffsetTop = 30;
         const brickOffsetLeft = 30;
 
+        // Статус игры
         let score = 0;
         let coins = 0;
         let gameOver = false;
 
-        let gameLevel = 'easy'; // Значение уровня
-
-        // Функция для создания блоков
+        // Функция создания блоков
         function createBricks() {
             bricks = [];
             for (let row = 0; row < brickRowCount; row++) {
@@ -189,12 +138,12 @@
             }
         }
 
-        // Функция для рисования блоков
+        // Функция для отрисовки блоков
         function drawBricks() {
             for (let row = 0; row < brickRowCount; row++) {
                 for (let col = 0; col < brickColumnCount; col++) {
                     let brick = bricks[row][col];
-                    if (brick.status == 1) {
+                    if (brick.status === 1) {
                         ctx.beginPath();
                         ctx.rect(brick.x, brick.y, brickWidth, brickHeight);
                         ctx.fillStyle = "#0095DD";
@@ -205,12 +154,12 @@
             }
         }
 
-        // Проверка столкновений с блоками
+        // Проверка столкновения мяча с блоками
         function collisionDetection() {
             for (let row = 0; row < brickRowCount; row++) {
                 for (let col = 0; col < brickColumnCount; col++) {
                     let brick = bricks[row][col];
-                    if (brick.status == 1) {
+                    if (brick.status === 1) {
                         if (ballX > brick.x && ballX < brick.x + brickWidth &&
                             ballY > brick.y && ballY < brick.y + brickHeight) {
                             ballSpeedY = -ballSpeedY;
@@ -224,11 +173,66 @@
             }
         }
 
-        // Обновление интерфейса (очки и монеты)
+        // Обновление очков и монет
         function updateUI() {
             document.getElementById("score").innerText = "Очки: " + score;
             document.getElementById("coins").innerText = "Монеты: " + coins;
         }
+
+        // Функция для рисования мяча
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Функция для рисования платформы
+        function drawPaddle() {
+            ctx.beginPath();
+            ctx.rect(paddleX, canvas.height - paddleHeight - 20, paddleWidth, paddleHeight);
+            ctx.fillStyle = "#0095DD";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        // Движение мяча
+        function moveBall() {
+            ballX += ballSpeedX;
+            ballY += ballSpeedY;
+
+            // Столкновение с правой и левой стеной
+            if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
+                ballSpeedX = -ballSpeedX;
+            }
+
+            // Столкновение с верхней стеной
+            if (ballY - ballRadius < 0) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Столкновение с платформой
+            if (ballY + ballRadius > canvas.height - paddleHeight - 20 &&
+                ballX > paddleX && ballX < paddleX + paddleWidth) {
+                ballSpeedY = -ballSpeedY;
+            }
+
+            // Если мяч падает ниже экрана
+            if (ballY + ballRadius > canvas.height) {
+                gameOver = true;
+                document.getElementById("gameOverMessage").style.display = 'block';
+            }
+        }
+
+        // Движение платформы
+        let mouseX;
+        canvas.addEventListener("mousemove", function(event) {
+            mouseX = event.clientX;
+            paddleX = mouseX - paddleWidth / 2;
+            if (paddleX < 0) paddleX = 0;
+            if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
+        });
 
         // Игровой цикл
         function gameLoop() {
@@ -236,114 +240,35 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Рисуем блоки
             drawBricks();
-
-            // Проверка столкновений с блоками
+            drawBall();
+            drawPaddle();
+            moveBall();
             collisionDetection();
-
-            // Логика мяча
-            ballX += ballSpeedX;
-            ballY += ballSpeedY;
-
-            // Столкновение с границами
-            if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
-                ballSpeedX = -ballSpeedX;
-            }
-
-            if (ballY - ballRadius < 0) {
-                ballSpeedY = -ballSpeedY;
-            } else if (ballY + ballRadius > canvas.height) {
-                if (ballX > paddleX && ballX < paddleX + paddleWidth) {
-                    ballSpeedY = -ballSpeedY;
-                    const hitPosition = (ballX - paddleX) / paddleWidth;
-                    ballSpeedX = (hitPosition - 0.5) * 10;
-                    score++;
-                    coins++;
-                    updateUI();
-                } else {
-                    gameOver = true;
-                    document.getElementById("gameOverMessage").style.display = 'block';
-                }
-            }
-
-            // Движение платформы
-            paddleX = mouseX - paddleWidth / 2;
-
-            // Рисуем платформу
-            ctx.beginPath();
-            ctx.rect(paddleX, canvas.height - paddleHeight, paddleWidth, paddleHeight);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-
-            // Рисуем мяч
-            ctx.beginPath();
-            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
+            updateUI();
 
             requestAnimationFrame(gameLoop);
         }
 
-        // Функция для старта игры
-        function startGame(level) {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            paddleWidth = 150;
-            ballX = canvas.width / 2;
-            ballY = canvas.height - 30;
+        // Начало игры
+        document.getElementById("playButton").addEventListener("click", function() {
+            document.getElementById("menu").style.display = 'none';
+            document.getElementById("game").style.display = 'block';
             createBricks();
+            paddleX = canvas.width / 2 - paddleWidth / 2;
+            gameLoop();
+        });
+
+        // Перезапуск игры
+        document.getElementById("restartButton").addEventListener("click", function() {
+            gameOver = false;
             score = 0;
             coins = 0;
-            gameOver = false;
-            ballSpeedX = level === 'easy' ? 2 : (level === 'medium' ? 3 : 4);
-            ballSpeedY = -2;
-            document.getElementById("game").style.display = 'block';
-            document.getElementById("menu").style.display = 'none';
-            document.getElementById("levelSelection").style.display = 'none';
-            document.getElementById("shop").style.display = 'none';
+            document.getElementById("gameOverMessage").style.display = 'none';
+            createBricks();
             gameLoop();
-        }
-
-        // Функции для кнопок
-        document.getElementById("playButton").addEventListener("click", () => {
-            document.getElementById("levelSelection").style.display = 'block';
-            document.getElementById("menu").style.display = 'none';
         });
 
-        document.getElementById("shopButton").addEventListener("click", () => {
-            document.getElementById("shop").style.display = 'block';
-            document.getElementById("menu").style.display = 'none';
-        });
-
-        document.getElementById("easyLevel").addEventListener("click", () => {
-            startGame('easy');
-        });
-
-        document.getElementById("mediumLevel").addEventListener("click", () => {
-            startGame('medium');
-        });
-
-        document.getElementById("hardLevel").addEventListener("click", () => {
-            startGame('hard');
-        });
-
-        document.getElementById("backToMenu").addEventListener("click", () => {
-            document.getElementById("menu").style.display = 'block';
-            document.getElementById("game").style.display = 'none';
-            document.getElementById("levelSelection").style.display = 'none';
-            document.getElementById("shop").style.display = 'none';
-        });
-
-        // Инициализация
-        window.onload = () => {
-            document.getElementById("menu").style.display = 'block';
-            document.getElementById("levelSelection").style.display = 'none';
-            document.getElementById("game").style.display = 'none';
-            document.getElementById("shop").style.display = 'none';
-        };
     </script>
 </body>
 </html>
