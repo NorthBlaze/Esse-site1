@@ -6,42 +6,114 @@
     <title>Сапёр</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            text-align: center;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .game-container {
+            text-align: center;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
         .grid {
             display: grid;
-            grid-template-columns: repeat(10, 30px);
-            grid-template-rows: repeat(10, 30px);
+            grid-template-columns: repeat(10, 40px);
+            grid-template-rows: repeat(10, 40px);
             gap: 2px;
-            margin: 20px auto;
-            width: max-content;
+            margin-bottom: 20px;
         }
+
         .cell {
-            width: 30px;
-            height: 30px;
-            background-color: #ccc;
+            width: 40px;
+            height: 40px;
+            background-color: #b8b8b8;
             text-align: center;
             vertical-align: middle;
+            font-size: 18px;
             cursor: pointer;
-            font-size: 14px;
-            border: 1px solid #888;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-weight: bold;
+            color: #333;
+            transition: background-color 0.3s ease;
         }
-        .revealed {
+
+        .cell.revealed {
             background-color: #fff;
         }
-        .bomb {
-            background-color: red;
+
+        .cell.bomb {
+            background-color: #ff4d4d;
+            color: white;
         }
-        .flag {
-            background-color: yellow;
+
+        .cell.flag {
+            background-color: #ffcc00;
+        }
+
+        .cell.number {
+            background-color: #f0f0f0;
+        }
+
+        .cell.number[data-bombs="1"] {
+            color: #1e90ff;
+        }
+        .cell.number[data-bombs="2"] {
+            color: #32cd32;
+        }
+        .cell.number[data-bombs="3"] {
+            color: #ff4500;
+        }
+        .cell.number[data-bombs="4"] {
+            color: #00008b;
+        }
+        .cell.number[data-bombs="5"] {
+            color: #8b0000;
+        }
+        .cell.number[data-bombs="6"] {
+            color: #00ced1;
+        }
+        .cell.number[data-bombs="7"] {
+            color: #000000;
+        }
+        .cell.number[data-bombs="8"] {
+            color: #808080;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            border: none;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #45a049;
         }
     </style>
 </head>
 <body>
 
-    <h1>Сапёр</h1>
-    <div id="game">
+    <div class="game-container">
+        <h1>Сапёр</h1>
         <div class="grid" id="grid"></div>
         <button onclick="restartGame()">Перезапустить</button>
     </div>
@@ -113,16 +185,19 @@
                             cellElement.innerText = '💣';
                         } else {
                             if (cell.neighboringBombs > 0) {
+                                cellElement.classList.add('number');
+                                cellElement.dataset.bombs = cell.neighboringBombs;
                                 cellElement.innerText = cell.neighboringBombs;
                             }
                         }
+                    } else {
+                        if (cell.isFlagged) {
+                            cellElement.classList.add('flag');
+                            cellElement.innerText = '🚩';
+                        }
                     }
 
-                    if (cell.isFlagged) {
-                        cellElement.classList.add('flag');
-                        cellElement.innerText = '🚩';
-                    }
-
+                    // Обработчики кликов
                     cellElement.addEventListener('click', () => revealCell(i, j));
                     cellElement.addEventListener('contextmenu', (e) => {
                         e.preventDefault();
