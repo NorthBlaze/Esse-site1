@@ -130,6 +130,18 @@
         .back-button:hover {
             background-color: #c0392b;
         }
+        .back-to-main-menu {
+            background-color: #f39c12;
+            color: white;
+            font-size: 20px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        .back-to-main-menu:hover {
+            background-color: #e67e22;
+        }
     </style>
 </head>
 <body>
@@ -158,6 +170,8 @@
     <button class="menu-button" id="easyBtn">Легкий</button>
     <button class="menu-button" id="mediumBtn">Средний</button>
     <button class="menu-button" id="hardBtn">Сложный</button>
+    <!-- Кнопка возврата на главную -->
+    <button class="back-to-main-menu" id="backToMainMenuBtn">Вернуться на главную</button>
 </div>
 
 <!-- Магазин -->
@@ -236,15 +250,11 @@
         ballSpeedY = -4 * ballSpeedMultiplier;  // Начальная скорость мяча по оси Y
 
         // Устанавливаем начальные параметры для игры
+        gameOver = false;
         score = 0;
         coins = 0;
-        document.getElementById("score").textContent = score;  // Обновляем счет
-        document.getElementById("coins").textContent = `Монеты: ${coins}`;  // Обновляем монеты
 
-        // Сбрасываем флаг окончания игры
-        gameOver = false;
-
-        // Пересоздаем блоки
+        // Создаем блоки
         createBricks();
 
         // Запускаем основной игровой цикл
@@ -276,7 +286,7 @@
                 ballSpeedY = -ballSpeedY;
                 const hitPosition = (ballX - paddleX) / paddleWidth;
                 ballSpeedX = (hitPosition - 0.5) * 10;
-                score++; 
+                score++;
                 coins++;
                 document.getElementById("score").textContent = score;
                 document.getElementById("coins").textContent = `Монеты: ${coins}`;
@@ -339,49 +349,20 @@
         requestAnimationFrame(gameLoop);
     }
 
-    // Магазин
-    document.getElementById("shopBtn").addEventListener("click", function() {
-        document.getElementById("shop").classList.remove("hidden");
-        document.getElementById("mainMenu").classList.add("hidden");
-    });
-
-    // Возврат в меню
-    document.getElementById("backToMenuBtn").addEventListener("click", function() {
-        document.getElementById("shop").classList.add("hidden");
+    // Кнопка возврата на главную страницу из меню сложности
+    document.getElementById("backToMainMenuBtn").addEventListener("click", function() {
+        document.getElementById("difficultyMenu").classList.add("hidden");
         document.getElementById("mainMenu").classList.remove("hidden");
     });
 
-    // Проверка монет и покупка
-    document.getElementById("buyExtraPaddle").addEventListener("click", function() {
-        if (coins >= 1299) {
-            coins -= 1299;
-            extraPaddleCount++;
-            document.getElementById("coins").textContent = `Монеты: ${coins}`;
-        } else {
-            document.getElementById("shopMessage").classList.remove("hidden");
-            document.getElementById("shopMessage").textContent = "Недостаточно монет!";
-        }
-    });
-
-    document.getElementById("buyPaddleColor").addEventListener("click", function() {
-        if (coins >= 100) {
-            coins -= 100;
-            paddleColor = "#e74c3c"; // Меняем цвет на красный
-            document.getElementById("coins").textContent = `Монеты: ${coins}`;
-        } else {
-            document.getElementById("shopMessage").classList.remove("hidden");
-            document.getElementById("shopMessage").textContent = "Недостаточно монет!";
-        }
-    });
-
-    // Старт игры
-    document.getElementById("startBtn").addEventListener("click", startGame);
+    // Кнопки для выбора уровня сложности
     document.getElementById("easyBtn").addEventListener("click", () => setDifficulty("easy"));
     document.getElementById("mediumBtn").addEventListener("click", () => setDifficulty("medium"));
     document.getElementById("hardBtn").addEventListener("click", () => setDifficulty("hard"));
 
-    // Запуск игры
-    document.getElementById("restartBtn").addEventListener("click", startGameGame);
+    // Старт игры
+    document.getElementById("startBtn").addEventListener("click", startGame);
 </script>
+
 </body>
 </html>
