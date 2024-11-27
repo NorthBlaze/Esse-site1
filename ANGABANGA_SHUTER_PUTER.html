@@ -3,278 +3,158 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Доберись до вершины :D</title>
+    <title>Chrome Dino Game</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #87CEEB;
+            background-color: #f4f4f4;
             font-family: Arial, sans-serif;
         }
+
         canvas {
             display: block;
-            margin: auto;
-            background: #87CEEB;
-        }
-        #score, #money, #shop {
-            position: absolute;
-            font-size: 24px;
-            color: #ffffff;
-        }
-        #score {
-            top: 10px;
-            left: 10px;
-        }
-        #money {
-            top: 40px;
-            left: 10px;
-        }
-        #shop {
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 10px;
-            border-radius: 10px;
-            color: white;
-            text-align: center;
-            font-size: 16px;
-        }
-        .shop-item {
-            display: block;
-            margin: 5px 0;
-            padding: 5px 10px;
-            background: green;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            color: white;
-            font-size: 14px;
-        }
-        .shop-item.disabled {
-            background: gray;
-            cursor: not-allowed;
-        }
-        .button-link {
-            position: fixed; /* Фиксируем кнопку в левом верхнем углу */
-            bottom: 10px;       /* Отступ снизу */
-            left: 10px;      /* Отступ слева */
-            padding: 10px 20px;
-            font-size: 16px;
-            color: white;
-            background-color: #4CAF50;
-            text-align: center;
-            text-decoration: none;
-            border-radius: 5px;
-            transition: background-color 0.3s ease;
-        }
-        .button-link:hover {
-            background-color: #45a049;
+            background-color: #f5f5f5;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #333;
+            display: none;
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            color: #333;
+        }
     </style>
 </head>
 <body>
-    <div id="score">Очки: 0</div>
-    <div id="money">Монеты: 0</div>
-    <div id="shop">
-        <h3>Магазин</h3>
-        <button id="upgradeSpeed" class="shop-item">Скорость (79 монет)</button>
-        <button id="upgradeJump" class="shop-item">Прыжок (89 монет)</button>
-        <button id="extraLife" class="shop-item">Возвращение к жизни :D (1099 монет)</button>
-    </div>
+    <div id="score">Score: 0</div>
+    <div id="gameOver">Game Over</div>
     <canvas id="gameCanvas"></canvas>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
-
-        const WIDTH = 400;
-        const HEIGHT = 600;
+        const WIDTH = 800;
+        const HEIGHT = 200;
         canvas.width = WIDTH;
         canvas.height = HEIGHT;
 
-        // Игрок
-        const player = {
-            x: WIDTH / 2 - 15,
-            y: HEIGHT - 60,
-            width: 30,
+        // Игровые переменные
+        let score = 0;
+        let gameOver = false;
+
+        // Динозавр
+        const dino = {
+            x: 50,
+            y: HEIGHT - 40,
+            width: 20,
             height: 30,
-            color: "red",
-            speedX: 0,
+            color: 'green',
             speedY: 0,
-            gravity: 0.5,
-            jumpPower: -10,
-            speedMultiplier: 1,
-            jumpMultiplier: 1,
-            isOnGround: false,
+            gravity: 0.8,
+            jumpPower: -12,
+            isJumping: false,
         };
 
-        // Игровые переменные
-        let platforms = [];
-        let score = 0;
-        let money = 0;
-        let cameraY = 0;
-
-        // Магазин
-        const upgradeSpeed = document.getElementById("upgradeSpeed");
-        const upgradeJump = document.getElementById("upgradeJump");
-        const extraLife = document.getElementById("extraLife");
-
-        // Создание начальной платформы
-        function createStartingPlatform() {
-            platforms.push({
-                x: WIDTH / 2 - 50,
-                y: HEIGHT - 30,
-                width: 100,
-                height: 10,
-                color: "green",
-                dx: 0
-            });
-        }
-
-        // Создание платформ
-        function createPlatforms(count = 20) {
-            const gap = 100;
-            for (let i = 0; i < count; i++) {
-                const width = Math.random() * 50 + 50;
-                const x = Math.random() * (WIDTH - width);
-                const y = platforms.length > 0 ? platforms[platforms.length - 1].y - gap : HEIGHT - 30 - i * gap;
-                platforms.push({ x, y, width, height: 10, color: "green", dx: 0 });
-            }
-        }
-
-        function addPlatform() {
-            const width = Math.random() * 50 + 50;
-            const x = Math.random() * (WIDTH - width);
-            const y = platforms[platforms.length - 1].y - 100;
-            const moving = Math.random() > 0.7;
-            const dx = moving ? (Math.random() > 0.5 ? 1 : -1) * 1.5 : 0;
-            platforms.push({ x, y, width, height: 10, color: "green", dx });
-        }
+        // Препятствия
+        let obstacles = [];
+        let obstacleSpeed = 3;
 
         // Управление
-        document.addEventListener("keydown", (e) => {
-            if (e.key === "ArrowLeft") player.speedX = -5 * player.speedMultiplier;
-            if (e.key === "ArrowRight") player.speedX = 5 * player.speedMultiplier;
-            if (e.key === " " && player.isOnGround) player.speedY = player.jumpPower * player.jumpMultiplier;
-        });
-
-        document.addEventListener("keyup", (e) => {
-            if (e.key === "ArrowLeft" || e.key === "ArrowRight") player.speedX = 0;
-        });
-
-        // Магазин
-        upgradeSpeed.addEventListener("click", () => {
-            if (money >= 79) {
-                money -= 79;
-                player.speedMultiplier += 0.2;
+        document.addEventListener('keydown', (e) => {
+            if (e.key === " " && !dino.isJumping && !gameOver) {
+                dino.speedY = dino.jumpPower;
+                dino.isJumping = true;
             }
         });
 
-        upgradeJump.addEventListener("click", () => {
-            if (money >= 89) {
-                money -= 89;
-                player.jumpMultiplier += 0.4;
-            }
-        });
-
-        extraLife.addEventListener("click", () => {
-            if (money >= 1099) {
-                money -= 1099;
-            }
-        });
-
-        // Обновление платформ
-        function updatePlatforms() {
-            platforms.forEach(platform => {
-                platform.x += platform.dx;
-
-                if (platform.x < 0 || platform.x + platform.width > WIDTH) platform.dx *= -1;
-            });
-
-            platforms = platforms.filter(platform => platform.y - cameraY < HEIGHT);
-
-            // Генерация новых платформ, если их мало
-            if (platforms.length < 20) {
-                createPlatforms(5);
-            }
+        // Функция для генерации препятствий
+        function createObstacle() {
+            const height = Math.random() * 20 + 20;
+            obstacles.push({ x: WIDTH, y: HEIGHT - height, width: 20, height });
         }
 
-        // Обновление игрока
-        function updatePlayer() {
-            player.x += player.speedX;
-            player.y += player.speedY;
-            player.speedY += player.gravity;
+        // Обновление игрока и препятствий
+        function update() {
+            if (gameOver) return;
 
-            if (player.x < 0) player.x = 0;
-            if (player.x + player.width > WIDTH) player.x = WIDTH - player.width;
+            // Обновление динозавра
+            dino.y += dino.speedY;
+            dino.speedY += dino.gravity;
 
-            player.isOnGround = false;
-            platforms.forEach(platform => {
-                if (
-                    player.y + player.height >= platform.y &&
-                    player.y + player.height <= platform.y + platform.height &&
-                    player.x + player.width > platform.x &&
-                    player.x < platform.x + platform.width &&
-                    player.speedY >= 0
-                ) {
-                    player.speedY = 0;
-                    player.y = platform.y - player.height;
-                    player.isOnGround = true;
+            if (dino.y >= HEIGHT - 40) {
+                dino.y = HEIGHT - 40;
+                dino.speedY = 0;
+                dino.isJumping = false;
+            }
 
-                    if (platform.color === "green") {
-                        score++;
-                        money += 2;
-                        platform.color = "gray";
-                    }
+            // Обновление препятствий
+            for (let i = 0; i < obstacles.length; i++) {
+                obstacles[i].x -= obstacleSpeed;
+
+                // Проверка на столкновение
+                if (dino.x + dino.width > obstacles[i].x && dino.x < obstacles[i].x + obstacles[i].width &&
+                    dino.y + dino.height > obstacles[i].y) {
+                    gameOver = true;
+                    document.getElementById('gameOver').style.display = 'block';
+                    break;
                 }
-            });
 
-            if (player.y - cameraY < HEIGHT / 3) cameraY = player.y - HEIGHT / 3;
-
-            if (player.y - cameraY > HEIGHT) {
-                newLevel();
+                // Удаление препятствий, которые ушли за экран
+                if (obstacles[i].x + obstacles[i].width < 0) {
+                    obstacles.splice(i, 1);
+                    i--;
+                    score++;
+                }
             }
-        }
 
-        // Создание нового уровня
-        function newLevel() {
-            platforms = [];
-            score = 0;
-            player.speedMultiplier = 1;
-            player.jumpMultiplier = 1;
-            createStartingPlatform();
-            createPlatforms();
-            player.x = WIDTH / 2 - 15;
-            player.y = HEIGHT - 60;
-            player.speedY = 0;
-            cameraY = 0;
-        }
+            // Генерация новых препятствий
+            if (Math.random() < 0.02) {
+                createObstacle();
+            }
 
-        function gameLoop() {
+            // Обновление экрана
             ctx.clearRect(0, 0, WIDTH, HEIGHT);
+            ctx.fillStyle = dino.color;
+            ctx.fillRect(dino.x, dino.y, dino.width, dino.height);
 
-            updatePlatforms();
-            updatePlayer();
+            // Рисуем препятствия
+            ctx.fillStyle = 'brown';
+            for (const obstacle of obstacles) {
+                ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            }
 
-            platforms.forEach(platform => {
-                ctx.fillStyle = platform.color;
-                ctx.fillRect(platform.x, platform.y - cameraY, platform.width, platform.height);
-            });
+            // Отображение счета
+            document.getElementById('score').textContent = 'Score: ' + score;
 
-            ctx.fillStyle = player.color;
-            ctx.fillRect(player.x, player.y - cameraY, player.width, player.height);
-
-            document.getElementById("score").textContent = `Очки: ${score}`;
-            document.getElementById("money").textContent = `Мани: ${money}`;
-
-            requestAnimationFrame(gameLoop);
+            requestAnimationFrame(update);
         }
 
-        createStartingPlatform();
-        createPlatforms();
-        gameLoop();
+        // Запуск игры
+        function startGame() {
+            score = 0;
+            gameOver = false;
+            obstacles = [];
+            dino.y = HEIGHT - 40;
+            dino.speedY = 0;
+            document.getElementById('gameOver').style.display = 'none';
+            update();
+        }
+
+        // Инициализация
+        startGame();
     </script>
-    <a href="index.html" class="button-link">Вернуться на главную</a>
 </body>
 </html>
