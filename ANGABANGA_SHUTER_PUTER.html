@@ -3,230 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сапер</title>
+    <title>Сапёр</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             text-align: center;
-            margin-top: 20px;
         }
-
-        #board {
+        .grid {
             display: grid;
             grid-template-columns: repeat(10, 30px);
             grid-template-rows: repeat(10, 30px);
-            gap: 5px;
+            gap: 2px;
             margin: 20px auto;
-            justify-content: center;
+            width: max-content;
         }
-
         .cell {
             width: 30px;
             height: 30px;
-            background-color: lightgray;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background-color: #ccc;
+            text-align: center;
+            vertical-align: middle;
             cursor: pointer;
-            border: 1px solid #999;
+            font-size: 14px;
+            border: 1px solid #888;
         }
-
-        .cell.opened {
-            background-color: white;
+        .revealed {
+            background-color: #fff;
         }
-
-        .cell.flag {
-            background-color: yellow;
-        }
-
-        .cell.mine {
+        .bomb {
             background-color: red;
         }
-
-        #game-status {
-            margin-top: 20px;
-            font-size: 20px;
-        }
-
-        #reset-btn {
-            padding: 10px 20px;
-            font-size: 16px;
-            margin-top: 20px;
-            cursor: pointer;
+        .flag {
+            background-color: yellow;
         }
     </style>
 </head>
 <body>
 
-    <h1>Сапер</h1>
-    <div id="game-status">Игра началась!</div>
-    <div id="board"></div>
-    <button id="reset-btn">Начать заново</button>
+    <h1>Сапёр</h1>
+    <div id="game">
+        <div class="grid" id="grid"></div>
+        <button onclick="restartGame()">Перезапустить</button>
+    </div>
 
     <script>
-        const boardSize = 10;  // Размер поля (10x10)
-        const mineCount = 10;  // Количество мин
-        let board = [];
-        let gameStatus = document.getElementById('game-status');
-        let resetBtn = document.getElementById('reset-btn');
+        // Инициализация
+        const rows = 10;
+        const cols = 10;
+        const totalBombs = 15;
+        let grid = [];
+        let revealedCells = 0;
         let gameOver = false;
 
-        // Функция для создания игрового поля
-        function createBoard() {
-            board = [];
-            let mines = [];
-            let cells = [];
+        // Функция для создания сетки
+        function createGrid() {
+            grid = [];
+            revealedCells = 0;
+            gameOver = false;
 
-            // Создаем поле и устанавливаем минное поле
-            for (let row = 0; row < boardSize; row++) {
-                let rowArr = [];
-                for (let col = 0; col < boardSize; col++) {
-                    rowArr.push({
-                        mine: false,
-                        flagged: false,
-                        opened: false,
-                        surroundingMines: 0
-                    });
-                }
-                board.push(rowArr);
-            }
-
-            // Размещение мин случайным образом
-            let placedMines = 0;
-            while (placedMines < mineCount) {
-                let randRow = Math.floor(Math.random() * boardSize);
-                let randCol = Math.floor(Math.random() * boardSize);
-                if (!board[randRow][randCol].mine) {
-                    board[randRow][randCol].mine = true;
-                    placedMines++;
+            // Создаём сетку
+            for (let i = 0; i < rows; i++) {
+                grid[i] = [];
+                for (let j = 0; j < cols; j++) {
+                    grid[i][j] = {
+                        isBomb: false,
+                        isRevealed: false,
+                        isFlagged: false,
+                        neighboringBombs: 0
+                    };
                 }
             }
 
-            // Для каждой клетки считаем количество мин вокруг
-            for (let row = 0; row < boardSize; row++) {
-                for (let col = 0; col < boardSize; col++) {
-                    if (board[row][col].mine) continue;
+            // Расставляем мины
+            let bombsPlaced = 0;
+            while (bombsPlaced < totalBombs) {
+                const row = Math.floor(Math.random() * rows);
+                const col = Math.floor(Math.random() * cols);
+                if (!grid[row][col].isBomb) {
+                    grid[row][col].isBomb = true;
+                    bombsPlaced++;
 
-                    let mineCount = 0;
+                    // Обновляем количество соседних мин
                     for (let r = row - 1; r <= row + 1; r++) {
                         for (let c = col - 1; c <= col + 1; c++) {
-                            if (r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
-                                if (board[r][c].mine) {
-                                    mineCount++;
-                                }
+                            if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                                grid[r][c].neighboringBombs++;
                             }
                         }
                     }
-                    board[row][col].surroundingMines = mineCount;
-                }
-            }
-            // Создание визуальных элементов
-            let gameBoard = document.getElementById('board');
-            gameBoard.innerHTML = '';
-            for (let row = 0; row < boardSize; row++) {
-                for (let col = 0; col < boardSize; col++) {
-                    let cell = document.createElement('div');
-                    cell.classList.add('cell');
-                    cell.dataset.row = row;
-                    cell.dataset.col = col;
-                    cell.addEventListener('click', onCellClick);
-                    cell.addEventListener('contextmenu', onCellRightClick);
-                    gameBoard.appendChild(cell);
-                    cells.push(cell);
                 }
             }
         }
 
-        // Обработчик клика на клетку
-        function onCellClick(e) {
-            if (gameOver) return;
+        // Функция для отображения сетки на экране
+        function renderGrid() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
 
-            let row = e.target.dataset.row;
-            let col = e.target.dataset.col;
-            row = parseInt(row);
-            col = parseInt(col);
+            for (let i = 0; i < rows; i++) {
+                for (let j = 0; j < cols; j++) {
+                    const cell = grid[i][j];
+                    const cellElement = document.createElement('div');
+                    cellElement.classList.add('cell');
 
-            if (board[row][col].opened || board[row][col].flagged) return;
+                    if (cell.isRevealed) {
+                        cellElement.classList.add('revealed');
+                        if (cell.isBomb) {
+                            cellElement.classList.add('bomb');
+                            cellElement.innerText = '💣';
+                        } else {
+                            if (cell.neighboringBombs > 0) {
+                                cellElement.innerText = cell.neighboringBombs;
+                            }
+                        }
+                    }
 
-            board[row][col].opened = true;
-            let cell = e.target;
-            cell.classList.add('opened');
-            if (board[row][col].mine) {
-                cell.classList.add('mine');
-                gameOver = true;
-                gameStatus.textContent = 'Игра окончена! Вы проиграли.';
-                return;
-            }
+                    if (cell.isFlagged) {
+                        cellElement.classList.add('flag');
+                        cellElement.innerText = '🚩';
+                    }
 
-            if (board[row][col].surroundingMines === 0) {
-                openAdjacentCells(row, col);
-            } else {
-                cell.textContent = board[row][col].surroundingMines;
-            }
+                    cellElement.addEventListener('click', () => revealCell(i, j));
+                    cellElement.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        toggleFlag(i, j);
+                    });
 
-            // Проверка на победу
-            if (checkVictory()) {
-                gameOver = true;
-                gameStatus.textContent = 'Поздравляем, вы выиграли!';
-            }
-        }
-
-        // Обработчик правого клика (флаг)
-        function onCellRightClick(e) {
-            e.preventDefault();
-            if (gameOver) return;
-
-            let row = e.target.dataset.row;
-            let col = e.target.dataset.col;
-            row = parseInt(row);
-            col = parseInt(col);
-
-            if (board[row][col].opened) return;
-
-            board[row][col].flagged = !board[row][col].flagged;
-            let cell = e.target;
-            if (board[row][col].flagged) {
-                cell.classList.add('flag');
-            } else {
-                cell.classList.remove('flag');
+                    gridElement.appendChild(cellElement);
+                }
             }
         }
 
-        // Открытие соседних клеток
-        function openAdjacentCells(row, col) {
-            for (let r = row - 1; r <= row + 1; r++) {
-                for (let c = col - 1; c <= col + 1; c++) {
-                    if (r >= 0 && r < boardSize && c >= 0 && c < boardSize) {
-                        if (!board[r][c].opened && !board[r][c].flagged) {
-                            let cell = document.querySelector(.cell[data-row="${r}"][data-col="${c}"]);
-                            onCellClick({ target: cell });
+        // Функция для обработки открытия клетки
+        function revealCell(row, col) {
+            if (gameOver || grid[row][col].isRevealed || grid[row][col].isFlagged) return;
+
+            const cell = grid[row][col];
+            cell.isRevealed = true;
+            revealedCells++;
+
+            if (cell.isBomb) {
+                gameOver = true;
+                alert('Игра окончена! Вы наткнулись на мину.');
+            } else if (cell.neighboringBombs === 0) {
+                // Раскрываем соседние клетки, если рядом нет мин
+                for (let r = row - 1; r <= row + 1; r++) {
+                    for (let c = col - 1; c <= col + 1; c++) {
+                        if (r >= 0 && r < rows && c >= 0 && c < cols) {
+                            if (!grid[r][c].isRevealed) {
+                                revealCell(r, c);
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Проверка на победу
-        function checkVictory() {
-            for (let row = 0; row < boardSize; row++) {
-                for (let col = 0; col < boardSize; col++) {
-                    if (!board[row][col].mine && !board[row][col].opened) {
-                        return false;
-                    }
-                }
+            if (revealedCells === rows * cols - totalBombs) {
+                gameOver = true;
+                alert('Поздравляем! Вы выиграли!');
             }
-            return true;
+
+            renderGrid();
         }
 
-        // Сброс игры
-        resetBtn.addEventListener('click', () => {
-            gameOver = false;
-            gameStatus.textContent = 'Игра началась!';
-            createBoard();
-        });
+        // Функция для установки или снятия флага
+        function toggleFlag(row, col) {
+            if (gameOver || grid[row][col].isRevealed) return;
 
-        // Инициализация игры
-        createBoard();
+            const cell = grid[row][col];
+            cell.isFlagged = !cell.isFlagged;
+            renderGrid();
+        }
+
+        // Функция для перезапуска игры
+        function restartGame() {
+            createGrid();
+            renderGrid();
+        }
+
+        // Запускаем игру
+        createGrid();
+        renderGrid();
     </script>
+
 </body>
 </html>
