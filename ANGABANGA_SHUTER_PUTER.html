@@ -28,7 +28,7 @@
             height: 100%;
             max-width: 100%;
             max-height: 100%;
-            background-image: url('https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png'); /* Ваш фон */
+            background-image: url('https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png');
             background-size: cover;
             background-position: center;
         }
@@ -194,7 +194,7 @@
 </div>
 
 <!-- Главное меню -->
-<div class="main-menu" id="mainMenu">
+<div class="main-menu hidden" id="mainMenu">
     <h2>Добро пожаловать в Арканоид</h2>
     <button class="menu-button" id="startBtn">Начать игру</button>
     <button class="menu-button" id="shopBtn">Магазин</button>
@@ -220,9 +220,9 @@
 </div>
 
 <!-- Экран входа -->
-<div class="login hidden" id="loginScreen">
-    <h2>Войти в игру</h2>
-    <input type="text" id="username" placeholder="Введите ваше имя">
+<div class="login" id="loginScreen">
+    <h2>Введите ваше имя</h2>
+    <input type="text" id="username" placeholder="Ваше имя">
     <button id="loginBtn">Войти</button>
 </div>
 
@@ -248,29 +248,14 @@
         canvas.height = canvasHeight;
     }
 
-    // Хранение данных пользователя в localStorage
-    function loadUserData() {
-        username = localStorage.getItem('username') || '';
-        score = parseInt(localStorage.getItem('score')) || 0;
-        coins = parseInt(localStorage.getItem('coins')) || 0;
-        updateUI();
-    }
-
-    function updateUI() {
-        document.getElementById("score").textContent = score;
-        document.getElementById("coins").textContent = `Монеты: ${coins}`;
-    }
-
+    // Начало игры
     function startGame() {
-        if (!username) {
-            document.getElementById("loginScreen").classList.remove("hidden");
-            return;
-        }
         document.getElementById("loginScreen").classList.add("hidden");
         document.getElementById("mainMenu").classList.add("hidden");
         document.getElementById("difficultyMenu").classList.add("hidden");
+        document.getElementById("shop").classList.add("hidden");
 
-        gameOver = false;
+        // Начальная позиция мяча
         ballX = canvasWidth / 2;
         ballY = canvasHeight - paddleHeight - ballRadius - 10;
         ballSpeedX = 4;
@@ -281,6 +266,7 @@
         gameLoop();
     }
 
+    // Создание блоков
     function createBricks() {
         bricks = [];
         for (let row = 0; row < 5; row++) {
@@ -291,6 +277,7 @@
         }
     }
 
+    // Главный игровой цикл
     function gameLoop() {
         if (gameOver) return;
 
@@ -299,6 +286,7 @@
         ballX += ballSpeedX * ballSpeedMultiplier;
         ballY += ballSpeedY * ballSpeedMultiplier;
 
+        // Столкновение с границами экрана
         if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
             ballSpeedX = -ballSpeedX;
         }
@@ -320,6 +308,7 @@
             }
         }
 
+        // Управление платформой
         document.addEventListener("mousemove", (e) => {
             paddleX = e.clientX - paddleWidth / 2;
             if (paddleX < 0) paddleX = 0;
@@ -341,12 +330,32 @@
         requestAnimationFrame(gameLoop);
     }
 
-    document.getElementById("restartBtn").addEventListener("click", () => startGame());
+    // Обновление UI (очки и монеты)
+    function updateUI() {
+        document.getElementById("score").textContent = score;
+        document.getElementById("coins").textContent = coins;
+    }
+
+    // Вход по имени
+    document.getElementById("loginBtn").addEventListener("click", () => {
+        const inputUsername = document.getElementById("username").value.trim();
+        if (inputUsername) {
+            username = inputUsername;
+            localStorage.setItem('username', username);
+            document.getElementById("loginScreen").classList.add("hidden");
+            startGame();
+        } else {
+            alert("Введите имя для входа.");
+        }
+    });
+
+    // Кнопка "Начать игру"
     document.getElementById("startBtn").addEventListener("click", () => {
         document.getElementById("mainMenu").classList.add("hidden");
         document.getElementById("difficultyMenu").classList.remove("hidden");
     });
 
+    // Кнопки выбора сложности
     document.getElementById("easyBtn").addEventListener("click", () => {
         difficulty = "easy";
         startGame();
@@ -362,24 +371,12 @@
         startGame();
     });
 
+    // Кнопка назад в меню
     document.getElementById("backToMainMenuBtn").addEventListener("click", () => {
         document.getElementById("difficultyMenu").classList.add("hidden");
         document.getElementById("mainMenu").classList.remove("hidden");
     });
 
-    document.getElementById("loginBtn").addEventListener("click", () => {
-        const inputUsername = document.getElementById("username").value.trim();
-        if (inputUsername) {
-            username = inputUsername;
-            localStorage.setItem('username', username);
-            document.getElementById("loginScreen").classList.add("hidden");
-            startGame();
-        } else {
-            alert("Введите имя для входа.");
-        }
-    });
-
-    loadUserData();
     setCanvasSize();
     window.addEventListener('resize', setCanvasSize);
 </script>
