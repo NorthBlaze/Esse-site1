@@ -310,7 +310,13 @@
         } else if (ballY + ballRadius > canvasHeight - paddleHeight) {
             // Проверка на столкновение с платформой
             if (ballX > paddleX && ballX < paddleX + paddleWidth) {
-                ballSpeedY = -ballSpeedY;  // Отражение мяча от платформы
+                // Расчет направления отскока в зависимости от того, где мяч попал на платформу
+                const hitPosition = (ballX - paddleX) / paddleWidth;  // Отношение позиции удара мяча к ширине платформы
+                ballSpeedY = -ballSpeedY;
+
+                // Угол отскока мяча
+                ballSpeedX = (hitPosition - 0.5) * 10; // Чем дальше от центра платформы удар, тем сильнее отклонение
+
                 score++;  // Увеличиваем счет
                 coins++;  // Увеличиваем монеты
                 document.getElementById("score").textContent = score;
