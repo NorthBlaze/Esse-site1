@@ -42,6 +42,11 @@
             top: 10px;
             left: 10px;
         }
+        .coins {
+            top: 10px;
+            right: 10px;
+            font-size: 20px;
+        }
         .game-over {
             top: 50%;
             left: 50%;
@@ -142,16 +147,47 @@
         .back-to-main-menu:hover {
             background-color: #e67e22;
         }
+        .login {
+            position: absolute;
+            top: 30%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 20px;
+            text-align: center;
+        }
+        .login input {
+            margin: 10px;
+            padding: 10px;
+            font-size: 18px;
+            border-radius: 5px;
+        }
+        .login button {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .login button:hover {
+            background-color: #2980b9;
+        }
     </style>
 </head>
 <body>
 
 <canvas id="gameCanvas"></canvas>
 
+<!-- Счетчик монет -->
 <div class="game-info score">
     Очки: <span id="score">0</span>
 </div>
+<div class="game-info coins">
+    Монеты: <span id="coins">0</span>
+</div>
 
+<!-- Сообщение о завершении игры -->
 <div class="game-info game-over hidden" id="gameOverMessage">
     Игра окончена
     <br><button class="restart-button" id="restartBtn">Начать заново</button>
@@ -170,7 +206,6 @@
     <button class="menu-button" id="easyBtn">Легкий</button>
     <button class="menu-button" id="mediumBtn">Средний</button>
     <button class="menu-button" id="hardBtn">Сложный</button>
-    <!-- Кнопка возврата на главную -->
     <button class="back-to-main-menu" id="backToMainMenuBtn">Вернуться на главную</button>
 </div>
 
@@ -182,6 +217,13 @@
     <p id="coins">Монеты: 0</p>
     <div id="shopMessage" class="shop-message hidden"></div>
     <button class="back-button" id="backToMenuBtn">Вернуться в меню</button>
+</div>
+
+<!-- Экран входа -->
+<div class="login hidden" id="loginScreen">
+    <h2>Войти в игру</h2>
+    <input type="text" id="username" placeholder="Введите ваше имя">
+    <button id="loginBtn">Войти</button>
 </div>
 
 <script>
@@ -196,82 +238,69 @@
     let gameOver = false;
     let ballSpeedMultiplier = 1;
     let difficulty = "medium"; // Средняя сложность по умолчанию
-    let extraPaddleCount = 0;
-    let paddleColor = "#0095DD"; // Начальный цвет платформы
-    let ballFreeze = false;
-    let freezeTime = 0;
-    let balls = [{x: ballX, y: ballY, speedX: ballSpeedX, speedY: ballSpeedY}];
+    let username = ""; // Имя пользователя
 
-    // Фон и размеры canvas
-    function resizeCanvas() {
+    // Установка размеров канваса
+    function setCanvasSize() {
         canvasWidth = window.innerWidth;
         canvasHeight = window.innerHeight;
         canvas.width = canvasWidth;
         canvas.height = canvasHeight;
     }
 
-    window.addEventListener("resize", resizeCanvas);
-    resizeCanvas();
-
-    // Блоки
-    const brickWidth = 75;
-    const brickHeight = 30;
-    const brickPadding = 10;
-    const brickOffsetTop = 30;
-    const brickOffsetLeft = 30;
-
-    function createBricks() {
-        bricks = [];
-        for (let row = 0; row < 5; row++) {
-            bricks[row] = [];
-            for (let col = 0; col < Math.floor((canvasWidth - brickOffsetLeft * 2) / (brickWidth + brickPadding)); col++) {
-                bricks[row][col] = { x: 0, y: 0, status: 1, bonus: Math.random() < 0.2 ? getRandomBonus() : null };
-            }
-        }
+    // Хранение данных пользователя в localStorage
+    function loadUserData() {
+        username = localStorage.getItem('username') || '';
+        score = parseInt(localStorage.getItem('score')) || 0;
+        coins = parseInt(localStorage.getItem('coins')) || 0;
+        updateUI();
     }
 
-    function getRandomBonus() {
-        const bonuses = ['split', 'speedUp', 'slowDown', 'freeze'];
-        return bonuses[Math.floor(Math.random() * bonuses.length)];
+    function updateUI() {
+        document.getElementById("score").textContent = score;
+        document.getElementById("coins").textContent = `Монеты: ${coins}`;
     }
 
-    // Старт игры
     function startGame() {
+        if (!username) {
+            document.getElementById("loginScreen").classList.remove("hidden");
+            return;
+        }
+        document.getElementById("loginScreen").classList.add("hidden");
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("difficultyMenu").classList.add("hidden");
+
         gameOver = false;
-        score = 0;
-        coins = 0;
-        ballSpeedMultiplier = 1;
-        paddleX = (canvasWidth - paddleWidth) / 2;
         ballX = canvasWidth / 2;
         ballY = canvasHeight - paddleHeight - ballRadius - 10;
         ballSpeedX = 4;
         ballSpeedY = -4;
+        paddleX = (canvasWidth - paddleWidth) / 2;
 
         createBricks();
-        document.getElementById("gameOverMessage").classList.add("hidden");
-
-        // Запускаем основной игровой цикл
         gameLoop();
+    }
+
+    // Создание блоков
+    function createBricks() {
+        bricks = [];
+        for (let row = 0; row < 5; row++) {
+            bricks[row] = [];
+            for (let col = 0; col < 7; col++) {
+                bricks[row][col] = { x: col * (brickWidth + brickPadding) + brickOffsetLeft, y: row * (brickHeight + brickPadding) + brickOffsetTop, status: 1, bonus: getRandomBonus() };
+            }
+        }
     }
 
     // Главный игровой цикл
     function gameLoop() {
         if (gameOver) return;
 
-        // Очистка экрана
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Обработка мяча
-        if (!ballFreeze) {
-            ballX += ballSpeedX * ballSpeedMultiplier;
-            ballY += ballSpeedY * ballSpeedMultiplier;
-        } else {
-            freezeTime++;
-            if (freezeTime > 180) {  // 3 секунды (180 кадров при 60 FPS)
-                ballFreeze = false;
-                freezeTime = 0;
-            }
-        }
+        ballX += ballSpeedX * ballSpeedMultiplier;
+        ballY += ballSpeedY * ballSpeedMultiplier;
 
         // Столкновение с границами экрана
         if (ballX + ballRadius > canvasWidth || ballX - ballRadius < 0) {
@@ -287,8 +316,7 @@
                 ballSpeedX = (hitPosition - 0.5) * 10;
                 score++;
                 coins++;
-                document.getElementById("score").textContent = score;
-                document.getElementById("coins").textContent = `Монеты: ${coins}`;
+                updateUI();
             } else {
                 gameOver = true;
                 document.getElementById("gameOverMessage").classList.remove("hidden");
@@ -306,37 +334,32 @@
         // Рисуем платформу
         ctx.beginPath();
         ctx.rect(paddleX, canvasHeight - paddleHeight, paddleWidth, paddleHeight);
-        ctx.fillStyle = paddleColor;
+        ctx.fillStyle = "#0095DD";
         ctx.fill();
         ctx.closePath();
 
         // Рисуем мяч
-        balls.forEach(ball => {
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, ballRadius, 0, Math.PI * 2);
-            ctx.fillStyle = "#0095DD";
-            ctx.fill();
-            ctx.closePath();
-        });
+        ctx.beginPath();
+        ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+        ctx.fillStyle = "#0095DD";
+        ctx.fill();
+        ctx.closePath();
 
         // Рисуем блоки
         for (let row = 0; row < 5; row++) {
-            for (let col = 0; col < Math.floor((canvasWidth - brickOffsetLeft * 2) / (brickWidth + brickPadding)); col++) {
+            for (let col = 0; col < 7; col++) {
                 let brick = bricks[row][col];
                 if (brick.status === 1) {
-                    let brickX = brickOffsetLeft + col * (brickWidth + brickPadding);
-                    let brickY = brickOffsetTop + row * (brickHeight + brickPadding);
-
-                    // Проверка на столкновение с мячом
+                    let brickX = brick.x;
+                    let brickY = brick.y;
                     if (ballX > brickX && ballX < brickX + brickWidth && ballY - ballRadius < brickY + brickHeight && ballY + ballRadius > brickY) {
                         ballSpeedY = -ballSpeedY;
                         brick.status = 0;  // Убираем блок
                         score += 10;
                         coins += 5;
-                        document.getElementById("score").textContent = score;
-                        document.getElementById("coins").textContent = `Монеты: ${coins}`;
+                        updateUI();
 
-                        // Бонус за разбивание блока
+                        // Применяем бонусы
                         if (brick.bonus === 'split') {
                             balls.push({
                                 x: ballX + ballRadius,
@@ -352,7 +375,6 @@
                             ballFreeze = true;
                         }
                     }
-
                     ctx.beginPath();
                     ctx.rect(brickX, brickY, brickWidth, brickHeight);
                     ctx.fillStyle = "#0095DD";
@@ -362,26 +384,40 @@
             }
         }
 
-        // Запуск следующего кадра
         requestAnimationFrame(gameLoop);
     }
 
-    // Кнопка перезапуска игры
+    // Кнопки управления
     document.getElementById("restartBtn").addEventListener("click", () => startGame());
+    document.getElementById("startBtn").addEventListener("click", () => {
+        document.getElementById("mainMenu").classList.add("hidden");
+        document.getElementById("difficultyMenu").classList.remove("hidden");
+    });
 
-    // Кнопка возврата на главную страницу из меню сложности
-    document.getElementById("backToMainMenuBtn").addEventListener("click", function() {
+    document.getElementById("easyBtn").addEventListener("click", () => {
+        difficulty = "easy";
+        startGame();
+    });
+
+    document.getElementById("mediumBtn").addEventListener("click", () => {
+        difficulty = "medium";
+        startGame();
+    });
+
+    document.getElementById("hardBtn").addEventListener("click", () => {
+        difficulty = "hard";
+        startGame();
+    });
+
+    document.getElementById("backToMainMenuBtn").addEventListener("click", () => {
         document.getElementById("difficultyMenu").classList.add("hidden");
         document.getElementById("mainMenu").classList.remove("hidden");
     });
 
-    // Кнопки для выбора уровня сложности
-    document.getElementById("easyBtn").addEventListener("click", () => setDifficulty("easy"));
-    document.getElementById("mediumBtn").addEventListener("click", () => setDifficulty("medium"));
-    document.getElementById("hardBtn").addEventListener("click", () => setDifficulty("hard"));
-
-    // Старт игры
-    document.getElementById("startBtn").addEventListener("click", startGame);
+    // Загружаем данные пользователя
+    loadUserData();
+    setCanvasSize();
+    window.addEventListener('resize', setCanvasSize);
 </script>
 
 </body>
