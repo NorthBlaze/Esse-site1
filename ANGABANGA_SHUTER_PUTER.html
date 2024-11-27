@@ -11,7 +11,7 @@
             overflow: hidden;
             font-family: Arial, sans-serif;
             height: 100%;
-            background-image: url('https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png'); /* Вставьте свой URL изображения */
+            background-image: url('ВАШ_УРЛ_ИЗОБРАЖЕНИЯ'); /* Вставьте свой URL изображения */
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -122,8 +122,7 @@
         let paddleWidth = 150;
         let paddleX;
 
-        let ballX = canvas.width / 2;
-        let ballY = canvas.height - 30;
+        let ballX, ballY;
         let ballSpeedX = 2;
         let ballSpeedY = -2;
 
@@ -240,6 +239,19 @@
             if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
         });
 
+        function startGame() {
+            ballX = canvas.width / 2;
+            ballY = canvas.height - 30;
+            ballSpeedX = 2;
+            ballSpeedY = -2;
+            score = 0;
+            coins = 0;
+            gameOver = false;
+            createBricks();
+            updateUI();
+            gameLoop();
+        }
+
         function gameLoop() {
             if (gameOver) return;
 
@@ -255,11 +267,8 @@
         document.getElementById("playButton").addEventListener("click", function() {
             document.getElementById("menu").style.display = 'none';
             document.getElementById("game").style.display = 'block';
-            createBricks();
             paddleX = canvas.width / 2 - paddleWidth / 2;
-            ballX = canvas.width / 2;
-            ballY = canvas.height - 30;
-            gameLoop();
+            startGame();
         });
 
         document.getElementById("backToMenu").addEventListener("click", function() {
@@ -267,19 +276,14 @@
             document.getElementById("game").style.display = 'none';
             document.getElementById("gameOverMessage").style.display = 'none';
             document.getElementById("backToMenu").style.display = 'none';
-            score = 0;
-            coins = 0;
         });
 
         document.getElementById("restartButton").addEventListener("click", function() {
             document.getElementById("gameOverMessage").style.display = 'none';
-            document.getElementById("backToMenu").style.display = 'none';
-            gameOver = false;
-            score = 0;
-            coins = 0;
-            createBricks();
-            gameLoop();
+            startGame();
         });
+
+        startGame();
     </script>
 
 </body>
