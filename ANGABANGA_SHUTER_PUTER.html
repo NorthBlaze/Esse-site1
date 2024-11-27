@@ -11,16 +11,16 @@
             overflow: hidden;
             font-family: Arial, sans-serif;
             height: 100%;
-            background-image: url('https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png'); /* Здесь вставьте URL вашего фото */
-            background-size: cover; /* Фон будет растягиваться на весь экран */
-            background-position: center; /* Центрирование изображения */
-            background-attachment: fixed; /* Фон не будет двигаться при прокрутке */
+            background-image: url('https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png'); /* Вставьте свой URL изображения */
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
 
         canvas {
             display: block;
             margin: 0 auto;
-            background-color: rgba(0, 0, 0, 0.5); /* Цвет фона канваса, который будет виден через прозрачность */
+            background-color: rgba(0, 0, 0, 0.5);
         }
 
         #menu {
@@ -28,9 +28,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            display: block;
             text-align: center;
-            z-index: 100; /* Кнопки и меню будут поверх фона */
+            z-index: 100;
         }
 
         #menu button {
@@ -52,7 +51,7 @@
         #game {
             display: none;
             position: relative;
-            z-index: 50; /* Игра будет под меню, чтобы не перекрывать */
+            z-index: 50;
         }
 
         #score, #coins {
@@ -112,42 +111,35 @@
     </div>
 
     <script>
-        // Инициализация переменных
         let canvas = document.getElementById("gameCanvas");
         let ctx = canvas.getContext("2d");
 
-        // Устанавливаем размеры канваса
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
-        // Размеры платформы и мяча
         const paddleHeight = 10;
         const ballRadius = 10;
-        let paddleWidth = 150; // Начальная ширина платформы
+        let paddleWidth = 150;
         let paddleX;
 
-        // Начальные координаты мяча
         let ballX = canvas.width / 2;
         let ballY = canvas.height - 30;
         let ballSpeedX = 2;
         let ballSpeedY = -2;
 
-        // Блоки
         let bricks = [];
-        const brickRowCount = 5;
-        const brickColumnCount = Math.floor(canvas.width / 60); // Количество блоков на всю ширину
-        const brickWidth = 60;
+        const brickRowCount = 8; // Увеличиваем количество рядов блоков
+        const brickColumnCount = Math.floor(canvas.width / 80); // Увеличиваем количество колонок блоков
+        const brickWidth = 80;
         const brickHeight = 20;
         const brickPadding = 10;
         const brickOffsetTop = 30;
         const brickOffsetLeft = 30;
 
-        // Статус игры
         let score = 0;
         let coins = 0;
         let gameOver = false;
 
-        // Функция создания блоков
         function createBricks() {
             bricks = [];
             for (let row = 0; row < brickRowCount; row++) {
@@ -162,7 +154,6 @@
             }
         }
 
-        // Функция для отрисовки блоков
         function drawBricks() {
             for (let row = 0; row < brickRowCount; row++) {
                 for (let col = 0; col < brickColumnCount; col++) {
@@ -178,7 +169,6 @@
             }
         }
 
-        // Проверка столкновения мяча с блоками
         function collisionDetection() {
             for (let row = 0; row < brickRowCount; row++) {
                 for (let col = 0; col < brickColumnCount; col++) {
@@ -187,7 +177,7 @@
                         if (ballX > brick.x && ballX < brick.x + brickWidth &&
                             ballY > brick.y && ballY < brick.y + brickHeight) {
                             ballSpeedY = -ballSpeedY;
-                            brick.status = 0; // Блок разрушен
+                            brick.status = 0;
                             score++;
                             coins++;
                             updateUI();
@@ -197,13 +187,11 @@
             }
         }
 
-        // Обновление очков и монет
         function updateUI() {
             document.getElementById("score").innerText = "Очки: " + score;
             document.getElementById("coins").innerText = "Монеты: " + coins;
         }
 
-        // Функция для рисования мяча
         function drawBall() {
             ctx.beginPath();
             ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
@@ -212,7 +200,6 @@
             ctx.closePath();
         }
 
-        // Функция для рисования платформы
         function drawPaddle() {
             ctx.beginPath();
             ctx.rect(paddleX, canvas.height - paddleHeight - 20, paddleWidth, paddleHeight);
@@ -221,36 +208,30 @@
             ctx.closePath();
         }
 
-        // Движение мяча
         function moveBall() {
             ballX += ballSpeedX;
             ballY += ballSpeedY;
 
-            // Столкновение с правой и левой стеной
             if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
                 ballSpeedX = -ballSpeedX;
             }
 
-            // Столкновение с верхней стеной
             if (ballY - ballRadius < 0) {
                 ballSpeedY = -ballSpeedY;
             }
 
-            // Столкновение с платформой
             if (ballY + ballRadius > canvas.height - paddleHeight - 20 &&
                 ballX > paddleX && ballX < paddleX + paddleWidth) {
                 ballSpeedY = -ballSpeedY;
             }
 
-            // Если мяч падает ниже экрана
             if (ballY + ballRadius > canvas.height) {
                 gameOver = true;
                 document.getElementById("gameOverMessage").style.display = 'block';
-                document.getElementById("backToMenu").style.display = 'block'; // Кнопка "Вернуться в меню"
+                document.getElementById("backToMenu").style.display = 'block';
             }
         }
 
-        // Движение платформы
         let mouseX;
         canvas.addEventListener("mousemove", function(event) {
             mouseX = event.clientX;
@@ -259,7 +240,6 @@
             if (paddleX + paddleWidth > canvas.width) paddleX = canvas.width - paddleWidth;
         });
 
-        // Игровой цикл
         function gameLoop() {
             if (gameOver) return;
 
@@ -272,7 +252,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Кнопка "Играть" для начала игры
         document.getElementById("playButton").addEventListener("click", function() {
             document.getElementById("menu").style.display = 'none';
             document.getElementById("game").style.display = 'block';
@@ -283,7 +262,6 @@
             gameLoop();
         });
 
-        // Кнопка "Вернуться в меню"
         document.getElementById("backToMenu").addEventListener("click", function() {
             document.getElementById("menu").style.display = 'block';
             document.getElementById("game").style.display = 'none';
@@ -293,7 +271,6 @@
             coins = 0;
         });
 
-        // Кнопка "Начать заново"
         document.getElementById("restartButton").addEventListener("click", function() {
             document.getElementById("gameOverMessage").style.display = 'none';
             document.getElementById("backToMenu").style.display = 'none';
