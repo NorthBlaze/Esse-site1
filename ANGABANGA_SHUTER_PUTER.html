@@ -8,15 +8,19 @@
         body {
             margin: 0;
             padding: 0;
-            background-color: #f4f4f4;
             overflow: hidden;
             font-family: Arial, sans-serif;
+            height: 100%;
+            background-image: url('https://i.pinimg.com/originals/36/ee/1e/36ee1e1df0e7b8f5df82fa555eda353e.png'); /* Здесь вставьте URL вашего фото */
+            background-size: cover; /* Фон будет растягиваться на весь экран */
+            background-position: center; /* Центрирование изображения */
+            background-attachment: fixed; /* Фон не будет двигаться при прокрутке */
         }
 
         canvas {
             display: block;
             margin: 0 auto;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.5); /* Цвет фона канваса, который будет виден через прозрачность */
         }
 
         #menu {
@@ -26,6 +30,7 @@
             transform: translate(-50%, -50%);
             display: block;
             text-align: center;
+            z-index: 100; /* Кнопки и меню будут поверх фона */
         }
 
         #menu button {
@@ -46,6 +51,8 @@
 
         #game {
             display: none;
+            position: relative;
+            z-index: 50; /* Игра будет под меню, чтобы не перекрывать */
         }
 
         #score, #coins {
@@ -67,13 +74,29 @@
             margin-top: 10px;
             cursor: pointer;
         }
+
+        #backToMenu {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 16px;
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        #backToMenu:hover {
+            background-color: #c0392b;
+        }
+
     </style>
 </head>
 <body>
 
-    <!-- Фон игры -->
-    <canvas id="gameCanvas"></canvas>
-
+    <!-- Меню -->
     <div id="menu">
         <button id="playButton">Играть</button>
     </div>
@@ -85,6 +108,7 @@
         <div id="gameOverMessage">
             Игра окончена! <button id="restartButton">Начать заново</button>
         </div>
+        <button id="backToMenu" style="display:none;">Вернуться в меню</button>
     </div>
 
     <script>
@@ -222,6 +246,7 @@
             if (ballY + ballRadius > canvas.height) {
                 gameOver = true;
                 document.getElementById("gameOverMessage").style.display = 'block';
+                document.getElementById("backToMenu").style.display = 'block'; // Кнопка "Вернуться в меню"
             }
         }
 
@@ -239,36 +264,46 @@
             if (gameOver) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             drawBricks();
             drawBall();
             drawPaddle();
-            moveBall();
             collisionDetection();
-            updateUI();
-
+            moveBall();
             requestAnimationFrame(gameLoop);
         }
 
-        // Начало игры
+        // Кнопка "Играть" для начала игры
         document.getElementById("playButton").addEventListener("click", function() {
             document.getElementById("menu").style.display = 'none';
             document.getElementById("game").style.display = 'block';
             createBricks();
             paddleX = canvas.width / 2 - paddleWidth / 2;
+            ballX = canvas.width / 2;
+            ballY = canvas.height - 30;
             gameLoop();
         });
 
-        // Перезапуск игры
+        // Кнопка "Вернуться в меню"
+        document.getElementById("backToMenu").addEventListener("click", function() {
+            document.getElementById("menu").style.display = 'block';
+            document.getElementById("game").style.display = 'none';
+            document.getElementById("gameOverMessage").style.display = 'none';
+            document.getElementById("backToMenu").style.display = 'none';
+            score = 0;
+            coins = 0;
+        });
+
+        // Кнопка "Начать заново"
         document.getElementById("restartButton").addEventListener("click", function() {
+            document.getElementById("gameOverMessage").style.display = 'none';
+            document.getElementById("backToMenu").style.display = 'none';
             gameOver = false;
             score = 0;
             coins = 0;
-            document.getElementById("gameOverMessage").style.display = 'none';
             createBricks();
             gameLoop();
         });
-
     </script>
+
 </body>
 </html>
